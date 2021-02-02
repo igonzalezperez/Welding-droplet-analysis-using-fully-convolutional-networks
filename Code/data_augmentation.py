@@ -4,9 +4,11 @@ Augment data
 # %% IMPORTS
 import os
 import numpy as np
+import matplotlib.pyplot as plt
+from progressbar import progressbar as progress
 from imgaug import augmenters as iaa
 from imgaug.augmentables.segmaps import SegmentationMapsOnImage
-import matplotlib.pyplot as plt
+
 
 # %% VARIABLES
 DATASET = ('Globular', 'Spray')
@@ -52,6 +54,7 @@ def plot_augmented_samples(dataset):
                 coords.append((i, j))
         for p in coords:
             yield p
+
     coord = get_coords()
     data = np.load(os.path.join('Data', 'Image', 'Labelbox',
                                 dataset.lower() + '_segmented.npz'))
@@ -98,7 +101,7 @@ def main():
         image_shape = images.shape[1:3]
 
         images_augmented, masks_augmented = ([], [])
-        for image, mask in zip(images, masks):
+        for image, mask in progress(zip(images, masks)):
             segmap = SegmentationMapsOnImage(mask, shape=image_shape)
             image_aug, segmap_aug = augment_data(SEQ, image, segmap, N_AUGMENT)
             for img_aug, sg_aug in zip(image_aug, segmap_aug):
@@ -109,8 +112,8 @@ def main():
 
         images_augmented = np.array(images_augmented)
         masks_augmented = np.array(masks_augmented)
-        np.savez(os.path.join('Data', 'Image', 'Augmented', d.lower() +
-                              '_augmented'), images=images_augmented, masks=masks_augmented)
+        np.savez_compressed(os.path.join('Data', 'Image', 'Augmented', d.lower() +
+                                         '_augmented'), images=images_augmented, masks=masks_augmented)
 
 
 # %% MAIN

@@ -3,7 +3,7 @@ A grayscale version is also stored which doesn't have the channels dimension.'''
 # %% IMPORTS
 import os
 import numpy as np
-import progressbar
+from progressbar import progressbar as progress
 from pycine.file import read_header
 from utils.cine import display_frames
 from utils.preprocessing import rgb2gray, normalizeuint8
@@ -29,7 +29,7 @@ def main():
 
         data_rgb = []
         data_gray = []
-        for i in progressbar.progressbar(range(n_frames)):
+        for i in progress(range(n_frames)):
             # read each frame from .cine file as an ndarray
             rgb_image, _ = display_frames(video_path, start_frame=i+1)
             rgb_image[np.isnan(rgb_image)] = 0
@@ -44,8 +44,9 @@ def main():
         data_rgb = np.array(data_rgb)
         data_gray = np.array(data_gray)
 
-        np.savez(save_folder + '_rgb_uncompressed', images=data_rgb)
-        np.savez(save_folder + '_gray_uncompressed', images=data_gray)
+        np.savez_compressed(save_folder + '_rgb_uncompressed', images=data_rgb)
+        np.savez_compressed(
+            save_folder + '_gray_uncompressed', images=data_gray)
 
 
 # %% MAIN

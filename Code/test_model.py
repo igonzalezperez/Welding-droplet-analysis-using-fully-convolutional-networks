@@ -7,6 +7,7 @@ import pickle
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
+from progressbar import progressbar as progress
 from utils import losses
 from utils.preprocessing import normalizeuint8
 from utils.misc import chunks, get_concat_h
@@ -70,7 +71,7 @@ def test_model(model_dir, batch_size=None):
     images = data['images'].astype('float32')
     images = images/255
     predictions = []
-    for batch in id_batches:
+    for batch in progress(id_batches):
         print(f'Testing batch [{batch[0]} - {batch[-1]}]')
         x_batch = images[batch]
         y_batch = model.predict(x_batch, verbose=0)
@@ -84,9 +85,9 @@ def test_model(model_dir, batch_size=None):
     print(f'Mean loss - {sum(results)/len(results):.2f}')
 
 
-def plot_preds():
+def plot_preds(dataset):
     data_img = np.load(os.path.join(
-        'Data', 'Image', 'Input', f'{DATASET.lower()}_rgb.npz'))
+        'Data', 'Image', 'Input', f'{dataset.lower()}_rgb.npz'))
 
     data_pred = np.load(os.path.join('Output', 'Predictions',
                                      f'{ARCHITECTURE_NAME}_{DATASET}_{N_FILTERS}_{BATCH_SIZE_TRAIN}_{EPOCHS}_preds.npz'))
@@ -112,4 +113,4 @@ def main():
 
 
 if __name__ == "__main__":
-    plot_preds()
+    main()

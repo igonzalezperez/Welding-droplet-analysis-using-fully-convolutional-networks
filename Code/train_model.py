@@ -8,6 +8,7 @@ import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split, KFold
+from progressbar import progressbar as progress
 from architectures import UNET, DECONVNET, MULTIRES
 
 gpus = tf.config.experimental.list_physical_devices('GPU')
@@ -87,7 +88,7 @@ def train_model(params, save=False, verbose=0, gridsearch=False, folds=5):
         kfold = KFold(folds, shuffle=True)
         cv = {'epoch': [], 'loss': [], 'val_loss': []}
         model_arch = choose_architecture(params['architecture_name'])
-        for train_idx, val_idx in kfold.split(images):
+        for train_idx, val_idx in progress(kfold.split(images)):
             model = model_arch(n_filters=params['n_filters'],
                                input_shape=shape,
                                optimizer_name=params['optimizer_name'],

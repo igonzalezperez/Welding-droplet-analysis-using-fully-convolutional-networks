@@ -42,8 +42,8 @@ def load_and_save_json():
             masks.append(np.asarray(image))
         images = np.load(os.path.join('Data', 'Image', 'Input', d.lower() +
                                       '_gray.npz'))['images'][_ids, ...]
-        np.savez(os.path.join('Data', 'Image', 'Labelbox', d.lower() +
-                              '_segmented'), images=images, masks=masks)
+        np.savez_compressed(os.path.join('Data', 'Image', 'Labelbox', d.lower() +
+                                         '_segmented'), images=images, masks=masks)
 
 
 # %% MAIN
