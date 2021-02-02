@@ -2,8 +2,13 @@
 Data
 Docs
 Output
-dict_to_excel.py
-demo.py
+Code/post_grid_search.py
+Code/plots.py
+Code/plot_strip.py
+Code/plot_properties.py
+Code/img.py
+Code/grid_search.py
+Code/compute_properties.py
 
 # Django #
 *.log
