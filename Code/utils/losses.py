@@ -1,7 +1,10 @@
 '''
-DOCSTRING
+Segmentation loss functions.
 '''
+# %% IMPORTS
 import tensorflow as tf
+
+# %% FUNCTIONS
 
 
 def jaccard_distance_loss(y_true, y_pred, smooth=100):
@@ -9,7 +12,7 @@ def jaccard_distance_loss(y_true, y_pred, smooth=100):
     Jaccard = (|X & Y|)/ (|X|+ |Y| - |X & Y|)
             = sum(|A*B|)/(sum(|A|)+sum(|B|)-sum(|A*B|))
 
-    The jaccard distance loss is usefull for unbalanced datasets. This has been
+    The jaccard distance loss is useful for unbalanced datasets. This has been
     shifted so it converges on 0 and is smoothed to avoid exploding or disapearing
     gradient.
 
@@ -28,7 +31,7 @@ def jaccard_distance_loss(y_true, y_pred, smooth=100):
 
 def iou_coef(y_true, y_pred, smooth=1):
     '''
-    Doc
+    Alternative implementation for jaccard index.
     '''
     intersection = tf.keras.backend.sum(
         tf.keras.backend.abs(y_true * y_pred), axis=[1, 2, 3])
@@ -40,6 +43,9 @@ def iou_coef(y_true, y_pred, smooth=1):
 
 
 def dice_coef_v1(y_true, y_pred, smooth=1):
+    '''
+    Alternative implementation for DICE coefficient.
+    '''
     y_true_f = tf.keras.backend.flatten(y_true)
     y_pred_f = tf.keras.backend.flatten(y_pred)
     intersection = tf.keras.backend.sum(y_true_f * y_pred_f)
@@ -66,3 +72,9 @@ def dice_loss_v1(y_true, y_pred):
 
 def dice_loss_v2(y_true, y_pred):
     return 1-dice_coef_v2(y_true, y_pred)
+
+# %% MAIN
+
+
+if __name__ == '__main__':
+    pass

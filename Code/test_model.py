@@ -2,13 +2,16 @@
 Test previously trained model and save predictions.
 '''
 # %% IMPORTS
-from utils.utils import chunks, get_concat_h
-from utils import losses
-from PIL import Image
-import numpy as np
 import os
 import pickle
+import numpy as np
 import tensorflow as tf
+import matplotlib.pyplot as plt
+from utils import losses
+from utils.preprocessing import normalizeuint8
+from utils.misc import chunks, get_concat_h
+
+
 gpus = tf.config.experimental.list_physical_devices('GPU')
 if gpus:
     try:
@@ -16,15 +19,18 @@ if gpus:
             tf.config.experimental.set_memory_growth(gpu, True)
     except RuntimeError as e:
         print(e)
+# %% VARIABLES
 
-
-ARCHITECTURE_NAME = 'unet'
-DATASET = 'Spray'
+ARCHITECTURE_NAME = 'multires'
+DATASET = 'Globular'
 N_FILTERS = 16
 BATCH_SIZE_TRAIN = 16
 EPOCHS = 100
-MODEL_DIR = f'Saved Models/{ARCHITECTURE_NAME}_{DATASET}_{N_FILTERS}_{BATCH_SIZE_TRAIN}_{EPOCHS}'
+MODEL_DIR = os.path.join('Output', 'Saved Models',
+                         f'{ARCHITECTURE_NAME}_{DATASET}_{N_FILTERS}_{BATCH_SIZE_TRAIN}_{EPOCHS}')
 BATCH_SIZE = 1000
+
+# %% FUNCTIONS
 
 
 def test_model(model_dir, batch_size=None):
@@ -50,37 +56,49 @@ def test_model(model_dir, batch_size=None):
 
     model.compile(
         optimizer=opt, loss=loss_fn)
+
+    data = np.load(os.path.join('Data', 'Image', 'Input',
+                                f"{params['dataset'].lower()}_gray.npz"))
     if batch_size:
-        test_size = len(os.listdir('HSV Frames/Test/' + params['dataset']))
+        test_size = len(data['images'])
     else:
         test_size = 10
         batch_size = 10
     id_batches = chunks([i for i in range(test_size)], batch_size)
     results = []
-    for batch in id_batches:
-        images_test = []
-        for i in batch:
-            img = Image.open('HSV Frames/Test/' +
-                             params['dataset'] + '/' + str(i) + '.jpg').convert('L')
-            images_test.append(np.asarray(img))
-        images_test = np.array(images_test).astype('float32')
-        x_test = images_test/255
 
+    images = data['images'].astype('float32')
+    images = images/255
+    predictions = []
+    for batch in id_batches:
         print(f'Testing batch [{batch[0]} - {batch[-1]}]')
-        y_test = model.predict(x_test, verbose=0)
-        loss = model.evaluate(x_test, y_test, verbose=0)
+        x_batch = images[batch]
+        y_batch = model.predict(x_batch, verbose=0)
+        loss = model.evaluate(x_batch, y_batch, verbose=0)
+        for pred in y_batch:
+            predictions.append(normalizeuint8(pred[..., 0]))
         results.append(loss)
-        print(f'Batch loss - {loss:.2f}')
-        for i, j in enumerate(batch):
-            img = Image.open('HSV Frames/Test/' +
-                             params['dataset'] + '/' + str(j) + '.jpg')
-            img_mask = Image.fromarray(
-                y_test[i][:, :, 0]*255).convert('L')
-            img_mask.save(
-                'HSV Frames/Preds/'+DATASET+'/Masks/' + str(j) + '.jpg')
-            get_concat_h(img, img_mask).save(
-                'HSV Frames/Preds/'+DATASET+'/Inputs and Masks/' + str(j) + '.jpg')
+    predictions = np.array(predictions, dtype=np.uint8)
+    np.savez(os.path.join('Output', 'Predictions',
+                          f'{ARCHITECTURE_NAME}_{DATASET}_{N_FILTERS}_{BATCH_SIZE_TRAIN}_{EPOCHS}_preds'), preds=predictions)
     print(f'Mean loss - {sum(results)/len(results):.2f}')
+
+
+def plot_preds():
+    data_img = np.load(os.path.join(
+        'Data', 'Image', 'Input', f'{DATASET.lower()}_rgb.npz'))
+
+    data_pred = np.load(os.path.join('Output', 'Predictions',
+                                     f'{ARCHITECTURE_NAME}_{DATASET}_{N_FILTERS}_{BATCH_SIZE_TRAIN}_{EPOCHS}_preds.npz'))
+
+    images = data_img['images']
+    preds = data_pred['preds']
+    _, ax = plt.subplots(1, 2)
+    for i, p in zip(images, preds):
+        ax[0].imshow(i)
+        ax[1].imshow(p)
+        plt.pause(.005)
+    plt.show()
 
 
 def main():
@@ -89,8 +107,9 @@ def main():
     '''
     test_model(MODEL_DIR, BATCH_SIZE)
 
+
 # %%MAIN
 
 
 if __name__ == "__main__":
-    main()
+    plot_preds()

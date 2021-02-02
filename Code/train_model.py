@@ -2,15 +2,14 @@
 Train UNET model and save results
 '''
 # %% IMPORTS
-from utils import losses
-from architectures import UNET, DECONVNET, MULTIRES
-from sklearn.model_selection import train_test_split, KFold
-from PIL import Image
-import numpy as np
-import matplotlib.pyplot as plt
 import os
 import pickle
+import numpy as np
 import tensorflow as tf
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split, KFold
+from architectures import UNET, DECONVNET, MULTIRES
+
 gpus = tf.config.experimental.list_physical_devices('GPU')
 if gpus:
     try:
@@ -25,13 +24,14 @@ BATCH_SIZE = 16
 N_FILTERS = 16
 LEARNING_RATE = .001
 OPTIMIZER_NAME = 'adam'
-ARCHITECTURE_NAME = 'unet'
+ARCHITECTURE_NAME = 'multires'
 
-DATASET = 'Spray'
+DATASET = 'Globular'
 
 TRAIN = True
 
-SAVE_DIR = f'Saved Models/{ARCHITECTURE_NAME}_{DATASET}_{N_FILTERS}_{BATCH_SIZE}_{EPOCHS}'
+SAVE_DIR = os.path.join('Output', 'Saved Models',
+                        f'{ARCHITECTURE_NAME}_{DATASET}_{N_FILTERS}_{BATCH_SIZE}_{EPOCHS}')
 
 PARAMS = {'dataset': DATASET,
           'epochs': EPOCHS,
@@ -60,22 +60,13 @@ def load_dataset(dataset):
     '''
     Loads dataset and splits into train and validation.
     '''
-    images = []
-    masks = []
-
-    path = 'HSV Frames/Augmented/' + dataset
-    for i in os.listdir(path + '/Inputs'):
-        img = Image.open(path + '/Inputs/' + i).convert('L')
-        images.append(np.asarray(img))
-    for i in os.listdir(path + '/Labels'):
-        img = Image.open(path + '/Labels/' + i).convert('L')
-        masks.append(np.asarray(img))
-
-    images = np.array(images)
+    data = np.load(os.path.join('Data', 'Image', 'Augmented',
+                                dataset.lower() + '_augmented.npz'))
+    images = data['images']
     images = np.expand_dims(images, axis=-1).astype('float32')
     images = images/255
 
-    masks = np.array(masks)
+    masks = data['masks']
     masks = np.expand_dims(masks, axis=-1).astype('float32')
     masks = masks/255
 
