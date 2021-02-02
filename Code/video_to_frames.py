@@ -44,9 +44,9 @@ def main():
         data_rgb = np.array(data_rgb)
         data_gray = np.array(data_gray)
 
-        np.savez_compressed(save_folder + '_rgb_uncompressed', images=data_rgb)
+        np.savez_compressed(save_folder + '_rgb', images=data_rgb)
         np.savez_compressed(
-            save_folder + '_gray_uncompressed', images=data_gray)
+            save_folder + '_gray', images=data_gray)
 
 
 # %% MAIN
