@@ -13,7 +13,7 @@ from matplotlib.animation import FuncAnimation
 from cv2 import cv2
 from progressbar import progressbar as progress
 import matplotlib as mpl
-
+from utils.preprocessing import rgb2gray
 mpl.rcParams['animation.ffmpeg_path'] = os.path.abspath(
     'C:\\ffmpeg\\bin\\ffmpeg.exe')
 # %% VAIRABLES
@@ -128,10 +128,53 @@ def plot_centroids_with_masks(save=False):
         plt.show()
 
 
+def plot_strip(n):
+    cent = GEOMETRY['centroids'][n]
+    area = GEOMETRY['areas'][n]
+    perimeter = GEOMETRY['perimeters'][n]
+
+    data = np.load(os.path.join('Data', 'Image', 'Input',
+                                f'{DATASET.lower()}_rgb.npz'))
+    data_mask = np.load(PREDS_DIR)
+
+    image = data['images'][n]
+    mask = data_mask['preds'][n]
+
+    m = np.argmax(area)
+    h = cent[m][1]
+    area_max = area[m]
+    perimeter_max = perimeter[m]
+
+    strip = rgb2gray(image[h, :])
+    mask_strip = mask[h, :]
+
+    fig1 = plt.figure()
+    plt.imshow(image)
+    plt.plot(strip, 'k', linewidth=1)
+    plt.plot(mask_strip, 'r', linewidth=1)
+    plt.plot([0, strip.shape[0]-2], [h, h], linewidth=1)
+    plt.tight_layout()
+    #plt.savefig(f'boundary_{DATASET}_{num}_1.pdf', format='pdf')
+
+    fig2 = plt.figure()
+    plt.plot(strip, linewidth=1, label='real pixel value')
+    plt.plot(mask_strip, linewidth=1, label='prediction')
+    plt.xlim([0, strip.shape[0]-2])
+    plt.legend()
+    plt.tight_layout()
+    #plt.savefig(f'boundary_{DATASET}_{num}_2.pdf', format='pdf')
+
+    fig3 = plt.figure()
+    plt.imshow(mask)
+    plt.tight_layout()
+    #plt.savefig(f'boundary_{DATASET}_{num}_3.pdf', format='pdf')
+    plt.show()
+
+
 # %% MAIN
 if __name__ == "__main__":
-    plot_centroids(save=True)
-    plot_centroids_with_masks(save=True)
+    n = np.random.randint(0, 9000)
+    plot_strip(500)
 # def plot_perimeters(cont=True):
     # geom = GEOMETRY['perimeters']
 
