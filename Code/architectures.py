@@ -25,8 +25,6 @@ class UNET():
         self.lr = lr
         if optimizer_name == 'adam':
             self.optimizer = tf.optimizers.Adam(self.lr)
-        elif optimizer_name == 'adadelta':
-            self.optimizer = tf.optimizers.Adadelta(self.lr)
 
         if loss_name == 'iou':
             self.loss_fn = losses.iou_coef

@@ -37,9 +37,9 @@ DATA_DIR_RGB = os.path.join(
 DATA_DIR_GRAY = os.path.join(
     'Data', 'Image', 'Input', f'{DATASET.lower()}_gray.npz')
 PREDS_DIR = os.path.join('Output', 'Predictions',
-                         f'{ARCHITECTURE_NAME}_{DATASET}_{N_FILTERS}_{BATCH_SIZE_TRAIN}_{EPOCHS}_preds.npz')
+                         f'{ARCHITECTURE_NAME.lower()}_{DATASET.lower()}_{N_FILTERS}_{BATCH_SIZE_TRAIN}_{EPOCHS}_preds.npz')
 GEOMETRY_DIR = os.path.join('Output', 'Geometry',
-                            f'{ARCHITECTURE_NAME}_{DATASET}_{N_FILTERS}_{BATCH_SIZE_TRAIN}_{EPOCHS}_geometry.pickle')
+                            f'{ARCHITECTURE_NAME.lower()}_{DATASET.lower()}_{N_FILTERS}_{BATCH_SIZE_TRAIN}_{EPOCHS}_geometry.pickle')
 
 P1 = 334*10 ** (-6)  # period between frames in seconds
 P2 = 333*10 ** (-6)
@@ -228,11 +228,11 @@ def plot_strip(n, save=False):
 
     if save:
         fig1.savefig(os.path.join('Output', 'Plots',
-                                  f'boundary_{DATASET}_{n}_1.pdf'), format='pdf')
+                                  f'boundary_{DATASET.lower()}_{n}_1.pdf'), format='pdf')
         fig2.savefig(os.path.join('Output', 'Plots',
-                                  f'boundary_{DATASET}_{n}_2.pdf'), format='pdf')
+                                  f'boundary_{DATASET.lower()}_{n}_2.pdf'), format='pdf')
         fig3.savefig(os.path.join('Output', 'Plots',
-                                  f'boundary_{DATASET}_{n}_3.pdf'), format='pdf')
+                                  f'boundary_{DATASET.lower()}_{n}_3.pdf'), format='pdf')
     else:
         plt.show()
 

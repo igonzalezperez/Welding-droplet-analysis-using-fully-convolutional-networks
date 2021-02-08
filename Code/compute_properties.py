@@ -28,7 +28,7 @@ N_FILTERS = 16
 BATCH_SIZE_TRAIN = 16
 EPOCHS = 100
 PREDS_DIR = os.path.join('Output', 'Predictions',
-                         f'{ARCHITECTURE_NAME}_{DATASET}_{N_FILTERS}_{BATCH_SIZE_TRAIN}_{EPOCHS}_preds.npz')
+                         f'{ARCHITECTURE_NAME.lower()}_{DATASET.lower()}_{N_FILTERS}_{BATCH_SIZE_TRAIN}_{EPOCHS}_preds.npz')
 
 # %% FUNCTIONS
 
@@ -115,7 +115,7 @@ def save_properties():
         'areas': area_arr,
         'perimeters': perim_arr
     }
-    with open(os.path.join('Output', 'Geometry', f'{ARCHITECTURE_NAME}_{DATASET}_{N_FILTERS}_{BATCH_SIZE_TRAIN}_{EPOCHS}_geometry.pickle'), 'wb') as f:
+    with open(os.path.join('Output', 'Geometry', f'{ARCHITECTURE_NAME.lower()}_{DATASET.lower()}_{N_FILTERS}_{BATCH_SIZE_TRAIN}_{EPOCHS}_geometry.pickle'), 'wb') as f:
         pickle.dump(geometry, f)
 
 

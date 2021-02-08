@@ -32,7 +32,7 @@ DATASET = 'Globular'
 TRAIN = True
 
 SAVE_DIR = os.path.join('Output', 'Saved Models',
-                        f'{ARCHITECTURE_NAME}_{DATASET}_{N_FILTERS}_{BATCH_SIZE}_{EPOCHS}')
+                        f'{ARCHITECTURE_NAME.lower()}_{DATASET.lower()}_{N_FILTERS}_{BATCH_SIZE}_{EPOCHS}')
 
 PARAMS = {'dataset': DATASET,
           'epochs': EPOCHS,
@@ -75,7 +75,7 @@ def load_dataset(dataset):
     return images, masks, shape
 
 
-def train_model(params, save=False, verbose=0, gridsearch=False, folds=5):
+def train_model(params, save=False, verbose=2, gridsearch=False, folds=5):
     '''
     Trains new UNET model and saves results.
     '''
@@ -83,7 +83,7 @@ def train_model(params, save=False, verbose=0, gridsearch=False, folds=5):
         params['dataset'])
 
     early_stop = tf.keras.callbacks.EarlyStopping(
-        monitor='val_loss', patience=100)
+        monitor='val_loss', patience=20)
     if gridsearch:
         kfold = KFold(folds, shuffle=True)
         cv = {'epoch': [], 'loss': [], 'val_loss': []}
@@ -113,7 +113,7 @@ def train_model(params, save=False, verbose=0, gridsearch=False, folds=5):
             cv['loss'].append(history['loss'][-1])
             cv['val_loss'].append(history['val_loss'][-1])
             cv['epoch'].append(len(history['loss']))
-            return cv
+        return cv
     else:
         model_arch = choose_architecture(params['architecture_name'])
         model = model_arch(n_filters=params['n_filters'],

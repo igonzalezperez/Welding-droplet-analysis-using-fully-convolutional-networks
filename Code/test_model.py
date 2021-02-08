@@ -28,7 +28,7 @@ N_FILTERS = 16
 BATCH_SIZE_TRAIN = 16
 EPOCHS = 100
 MODEL_DIR = os.path.join('Output', 'Saved Models',
-                         f'{ARCHITECTURE_NAME}_{DATASET}_{N_FILTERS}_{BATCH_SIZE_TRAIN}_{EPOCHS}')
+                         f'{ARCHITECTURE_NAME.lower()}_{DATASET.lower()}_{N_FILTERS}_{BATCH_SIZE_TRAIN}_{EPOCHS}')
 BATCH_SIZE = 1000
 
 # %% FUNCTIONS
@@ -49,8 +49,6 @@ def test_model(model_dir, batch_size=None):
 
     if params['optimizer_name'] == 'adam':
         opt = tf.optimizers.Adam(params['lr'])
-    elif params['optimizer_name'] == 'adadelta':
-        opt = tf.optimizers.Adadelta(params['lr'])
 
     if params['loss_name'] == 'iou':
         loss_fn = losses.iou_coef
@@ -81,7 +79,7 @@ def test_model(model_dir, batch_size=None):
         results.append(loss)
     predictions = np.array(predictions, dtype=np.uint8)
     np.savez(os.path.join('Output', 'Predictions',
-                          f'{ARCHITECTURE_NAME}_{DATASET}_{N_FILTERS}_{BATCH_SIZE_TRAIN}_{EPOCHS}_preds'), preds=predictions)
+                          f'{ARCHITECTURE_NAME.lower()}_{DATASET.lower()}_{N_FILTERS}_{BATCH_SIZE_TRAIN}_{EPOCHS}_preds'), preds=predictions)
     print(f'Mean loss - {sum(results)/len(results):.2f}')
 
 
@@ -90,7 +88,7 @@ def plot_preds(dataset):
         'Data', 'Image', 'Input', f'{dataset.lower()}_rgb.npz'))
 
     data_pred = np.load(os.path.join('Output', 'Predictions',
-                                     f'{ARCHITECTURE_NAME}_{DATASET}_{N_FILTERS}_{BATCH_SIZE_TRAIN}_{EPOCHS}_preds.npz'))
+                                     f'{ARCHITECTURE_NAME.lower()}_{DATASET.lower()}_{N_FILTERS}_{BATCH_SIZE_TRAIN}_{EPOCHS}_preds.npz'))
 
     images = data_img['images']
     preds = data_pred['preds']
