@@ -6,14 +6,11 @@ import os
 import pickle
 import cv2
 import numpy as np
-from numpy import argmax, mean, diff, log, nonzero
 import matplotlib.pyplot as plt
 from progressbar import progressbar as progress
 from scipy.spatial import distance
-from PIL import Image, ImageDraw
-from scipy.signal import blackmanharris, correlate
+from PIL import Image
 from cv2 import cv2
-from numpy import polyfit, arange
 
 # %% VARIABLES
 # 26 px = .045 in = 1.143 mm
@@ -48,10 +45,10 @@ def compute_properties(img):
         mmt = cv2.moments(cnt)
         if mmt['m00'] > 20:  # ignore really small contours
             try:
-                cx = int(mmt['m10']/mmt['m00'])
-                cy = int(mmt['m01']/mmt['m00'])
+                c_x = int(mmt['m10']/mmt['m00'])
+                c_y = int(mmt['m01']/mmt['m00'])
 
-                centroids.append((cx, cy))
+                centroids.append((c_x, c_y))
 
                 area.append(mmt['m00'])
                 perimeter.append(cv2.arcLength(cnt, True))
@@ -115,17 +112,23 @@ def save_properties():
         'areas': area_arr,
         'perimeters': perim_arr
     }
-    with open(os.path.join('Output', 'Geometry', f'{ARCHITECTURE_NAME.lower()}_{DATASET.lower()}_{N_FILTERS}_{BATCH_SIZE_TRAIN}_{EPOCHS}_geometry.pickle'), 'wb') as f:
-        pickle.dump(geometry, f)
+    with open(os.path.join('Output', 'Geometry', f'{ARCHITECTURE_NAME.lower()}_{DATASET.lower()}_{N_FILTERS}_{BATCH_SIZE_TRAIN}_{EPOCHS}_geometry.pickle'), 'wb') as data_file:
+        pickle.dump(geometry, data_file)
 
 
-def vel_norm(p1, p2, dt):
-    return np.linalg.norm(np.subtract(p2, p1)*PX_TO_MM)
+def vel_norm(p_1, p_2):
+    '''
+    DOC
+    '''
+    return np.linalg.norm(np.subtract(p_2, p_1)*PX_TO_MM)
 
 
-def time_period(ls):
+def time_period(time_list):
+    '''
+    DOC
+    '''
     while True:
-        for i in ls:
+        for i in time_list:
             yield i
 
 
@@ -133,28 +136,28 @@ def compute_vel():
     '''
     Compute velocity from centroid positions.
     '''
-    with open('Geometry/' + DATASET + '.pickle', 'rb') as f:
-        GEOMETRY = pickle.load(f)
+    with open('Geometry/' + DATASET + '.pickle', 'rb') as data_file:
+        geometry = pickle.load(data_file)
 
-    geom = GEOMETRY['centroids']
+    geom = geometry['centroids']
 
-    vel = []
-    dt = time_period([P1, P2, P2, P2])
+    velocity = []
+    #dt = time_period([P1, P2, P2, P2])
     for i in range(len(geom)-1):
         cent1 = geom[i]
         cent2 = geom[i+1]
         if len(cent2) == 1 and len(cent1) == 1:
-            vel.append(vel_norm(cent1[0], cent2[0], next(dt)))
+            velocity.append(vel_norm(cent1[0], cent2[0]))
         elif len(cent2) > 1 and len(cent1) == 1:
-            v = [vel_norm(cent1[0], c, next(dt)) for c in cent2]
-            vel.append(v)
+            vel = [vel_norm(cent1[0], c) for c in cent2]
+            velocity.append(vel)
         elif len(cent2) > 1 and len(cent1) > 1:
             min_idx = min_distance(cent1, cent2)
-            v = [vel_norm(cent1[k[0]], cent2[k[1]], next(dt)) for k in min_idx]
-            vel.append(v)
+            vel = [vel_norm(cent1[k[0]], cent2[k[1]]) for k in min_idx]
+            velocity.append(vel)
         elif len(cent2) == 1 and len(cent1) > 1:
-            v = [vel_norm(c, cent2, next(dt)) for c in cent2]
-            vel.append(v)
+            vel = [vel_norm(c, cent2) for c in cent2]
+            velocity.append(vel)
 
     return vel
 
@@ -179,15 +182,15 @@ def min_sort_row(arr):
     return idx[min_d_sort], arr[min_d_sort]
 
 
-def min_distance(t1, t2):
+def min_distance(t_1, t_2):
     '''
     Computes the euclidean distance between all points of t1 and t2,
     then returns which element of each list corresponds to the other
     list by minimizing distance.
     t1, t2 (List): List of tuples [(x1,y1),(x2,y2)...(xn,yn)]
     '''
-    arr_s, arr_l = sorted([t1, t2], key=len)
-    swap = True if arr_l == t2 else False
+    arr_s, arr_l = sorted([t_1, t_2], key=len)
+    swap = True if arr_l == t_2 else False
 
     distances = distance.cdist(arr_l, arr_s, 'euclidean')
     # sort rows by min value in them and keep original index order
@@ -199,11 +202,11 @@ def min_distance(t1, t2):
         seq = next_min(row)
         min_idx, _ = next(seq)
         if not swap:
-            md = [i, min_idx]
+            min_coords = [i, min_idx]
         else:
-            md = [min_idx, i]
+            min_coords = [min_idx, i]
         exclude.add(min_idx)
-        res.append(md)
+        res.append(min_coords)
     if len(exclude) < len(arr_s):
         print(
             f'Not all points were connected. {len(arr_s)-len(exclude)} point(s) not used.')
@@ -227,14 +230,17 @@ def next_min(arr):
         arr = np.delete(arr, np.argmin(arr))
 
 
-def plot_vel(ls):
+def plot_vel(vel_list):
+    '''
+    DOC
+    '''
     _, (ax1, _) = plt.subplots(
         2, 1)
-    for idx, v in enumerate(ls):
+    for idx, vel in enumerate(vel_list):
         try:
-            ax1.plot(idx, min(v), 'rx')
+            ax1.plot(idx, min(vel), 'rx')
         except TypeError:
-            ax1.plot(idx, v, 'k.')
+            ax1.plot(idx, vel, 'k.')
 
         # ax2.imshow(cv2.imread('HSV Frames\\Test\\' +
         #                      DATASET + '\\' + str(idx) + '.jpg', cv2.IMREAD_GRAYSCALE))

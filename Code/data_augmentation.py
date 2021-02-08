@@ -46,29 +46,35 @@ def augment_data(seq, img, segmap, n_images):
 
 
 def plot_augmented_samples(dataset):
+    '''
+    DOC
+    '''
     def get_coords(n_images=12, n_rows=3):
+        '''
+        DOC
+        '''
         coords = []
         n_cols = int(np.ceil(n_images/n_rows))
         for i in range(n_rows):
             for j in range(n_cols):
                 coords.append((i, j))
-        for p in coords:
-            yield p
+        for point in coords:
+            yield point
 
     coord = get_coords()
     data = np.load(os.path.join('Data', 'Image', 'Labelbox',
                                 dataset.lower() + '_segmented.npz'))
 
-    n = np.random.randint(low=0, high=len(data['images']))
-    img = data['images'][n]
-    mask = data['masks'][n]
-    _, ax = plt.subplots(3, 4, sharex=True, sharey=True, figsize=(10, 10))
-    c1 = next(coord)
-    c2 = next(coord)
-    ax[c1].imshow(img)
-    ax[c2].imshow(mask)
-    ax[c1].set_title('Original image')
-    ax[c2].set_title('Original mask')
+    num = np.random.randint(low=0, high=len(data['images']))
+    img = data['images'][num]
+    mask = data['masks'][num]
+    _, axes = plt.subplots(3, 4, sharex=True, sharey=True, figsize=(10, 10))
+    coord_1 = next(coord)
+    coord_2 = next(coord)
+    axes[coord_1].imshow(img)
+    axes[coord_2].imshow(mask)
+    axes[coord_1].set_title('Original image')
+    axes[coord_2].set_title('Original mask')
 
     mask = mask.astype(bool)
     img_shape = img.shape
@@ -76,12 +82,12 @@ def plot_augmented_samples(dataset):
     segmap = SegmentationMapsOnImage(mask, shape=img_shape)
     img_aug, mask_aug = augment_data(SEQ, img, segmap, 5)
 
-    for i, m in zip(img_aug, mask_aug):
-        sg_map = m.draw(size=img_shape)[0]
+    for image, msk in zip(img_aug, mask_aug):
+        sg_map = msk.draw(size=img_shape)[0]
         sg_map = ((sg_map[..., 0] != 0)*255).astype(np.uint8)
 
-        ax[next(coord)].imshow(i)
-        ax[next(coord)].imshow(sg_map)
+        axes[next(coord)].imshow(image)
+        axes[next(coord)].imshow(sg_map)
 
     plt.xticks([])
     plt.yticks([])
@@ -93,9 +99,9 @@ def main():
     '''
     Load original images and masks, augment them and save as images.
     '''
-    for d in DATASET:
+    for dataset in DATASET:
         data = np.load(os.path.join('Data', 'Image', 'Labelbox',
-                                    d.lower() + '_segmented.npz'))
+                                    dataset.lower() + '_segmented.npz'))
         images = data['images']
         masks = data['masks'].astype(bool)
         image_shape = images.shape[1:3]
@@ -112,7 +118,7 @@ def main():
 
         images_augmented = np.array(images_augmented)
         masks_augmented = np.array(masks_augmented)
-        np.savez_compressed(os.path.join('Data', 'Image', 'Augmented', d.lower() +
+        np.savez_compressed(os.path.join('Data', 'Image', 'Augmented', dataset.lower() +
                                          '_augmented'), images=images_augmented, masks=masks_augmented)
 
 

@@ -27,9 +27,9 @@ def load_and_save_json():
     '''
     Loads exported json file from LabelBox containing urls to each image and segmentation map.
     '''
-    for d in DATASET:
+    for dataset in DATASET:
         json_file = pd.read_json(os.path.join(
-            'Data', 'json', d.lower() + '_masks.json'))
+            'Data', 'json', dataset.lower() + '_masks.json'))
         _ids = []
         masks = []
         for i in progress(range(len(json_file))):
@@ -37,12 +37,12 @@ def load_and_save_json():
             annot = json_file['Label'][i]['objects'][0]['instanceURI']
 
             with urllib.request.urlopen(annot) as url:
-                f = io.BytesIO(url.read())
-            image = Image.open(f).convert('L')
+                image_bytes_url = io.BytesIO(url.read())
+            image = Image.open(image_bytes_url).convert('L')
             masks.append(np.asarray(image))
-        images = np.load(os.path.join('Data', 'Image', 'Input', d.lower() +
+        images = np.load(os.path.join('Data', 'Image', 'Input', dataset.lower() +
                                       '_gray.npz'))['images'][_ids, ...]
-        np.savez_compressed(os.path.join('Data', 'Image', 'Labelbox', d.lower() +
+        np.savez_compressed(os.path.join('Data', 'Image', 'Labelbox', dataset.lower() +
                                          '_segmented'), images=images, masks=masks)
 
 

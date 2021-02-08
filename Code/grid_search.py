@@ -3,13 +3,9 @@ Grid search
 '''
 # %%
 import os
-import pickle
 import itertools
 import pandas as pd
-import tensorflow as tf
 from train_model import train_model
-from utils import losses
-from architectures import UNET, DECONVNET, MULTIRES
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 # %%
@@ -27,7 +23,7 @@ PARAMS = {'dataset': DATASET,
           'loss_name': LOSS_NAME,
           'batch_size': BATCH_SIZE,
           'n_filters': N_FILTERS,
-          'lr': LEARNING_RATE,
+          'learning_rate': LEARNING_RATE,
           'optimizer_name': OPTIMIZER_NAME,
           'architecture_name': ARCHITECTURE_NAME
           }
@@ -58,18 +54,21 @@ def grid_search(params):
 
     records = []
 
-    for i, p in enumerate(grid_space):
-        print(f'Training model {i+1}: {p}')
-        cv = train_model(p, save=False, gridsearch=True, verbose=2, folds=4)
-        epoch_dict = {'epoch_'+str(i): v for i, v in enumerate(cv['epoch'])}
-        loss_dict = {'loss_'+str(i): v for i, v in enumerate(cv['loss'])}
+    for i, param_dict in enumerate(grid_space):
+        print(f'Training model {i+1}: {param_dict}')
+        cross_val = train_model(param_dict, save=False,
+                                gridsearch=True, verbose=0, folds=4)
+        epoch_dict = {'epoch_'+str(i): v for i,
+                      v in enumerate(cross_val['epoch'])}
+        loss_dict = {'loss_'+str(i): v for i,
+                     v in enumerate(cross_val['loss'])}
         val_loss_dict = {'val_loss_' +
-                         str(i): v for i, v in enumerate(cv['val_loss'])}
-        r = {**p, **epoch_dict, **loss_dict, **val_loss_dict}
+                         str(i): v for i, v in enumerate(cross_val['val_loss'])}
+        results = {**param_dict, **epoch_dict, **loss_dict, **val_loss_dict}
 
-        records.append(r)
-        loss = sum(cv['loss'])/len(cv['loss'])
-        val_loss = sum(cv['val_loss'])/len(cv['val_loss'])
+        records.append(results)
+        loss = sum(cross_val['loss'])/len(cross_val['loss'])
+        val_loss = sum(cross_val['val_loss'])/len(cross_val['val_loss'])
         print(f'''loss={loss:.4f}''')
         print(f'''val_loss={val_loss:.4f}\n''')
         records_frame = pd.DataFrame(records)

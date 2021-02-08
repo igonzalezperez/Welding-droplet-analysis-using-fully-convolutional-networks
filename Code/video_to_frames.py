@@ -15,16 +15,16 @@ DATASET = ('Globular', 'Spray')
 
 def main():
     '''Convert cine file to frames and save them in a .npz file.'''
-    for d in DATASET:
-        if d == 'Globular':
+    for dataset in DATASET:
+        if dataset == 'Globular':
             video_name = '11-12-06_GMAW CV High V Globular - 175 ipm WFS, 33V, 85-15CO2, 20 ipm travel'
-        elif d == 'Spray':
+        elif dataset == 'Spray':
             video_name = '11-12-06_GMAW CV Spray - 400 ipm WFS, 35V, 85-15CO2, 20 ipm travel'
 
         video_path = os.path.join(
             'Data', 'Video', 'CINE', video_name + '.cine')
         total_frames = read_header(video_path)["cinefileheader"].ImageCount
-        save_folder = os.path.join('Data', 'Image', 'Input', d.lower())
+        save_folder = os.path.join('Data', 'Image', 'Input', dataset.lower())
         n_frames = total_frames
 
         data_rgb = []

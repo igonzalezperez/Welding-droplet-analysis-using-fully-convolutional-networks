@@ -48,7 +48,7 @@ def test_model(model_dir, batch_size=None):
     model = tf.keras.models.load_model(params['save_dir'], compile=False)
 
     if params['optimizer_name'] == 'adam':
-        opt = tf.optimizers.Adam(params['lr'])
+        opt = tf.optimizers.Adam(params['learning_rate'])
 
     if params['loss_name'] == 'iou':
         loss_fn = losses.iou_coef

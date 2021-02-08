@@ -16,8 +16,8 @@ if gpus:
     try:
         for gpu in gpus:
             tf.config.experimental.set_memory_growth(gpu, True)
-    except RuntimeError as e:
-        print(e)
+    except RuntimeError as error:
+        print(error)
 # %% VARIABLES
 EPOCHS = 100
 LOSS_NAME = 'iou'
@@ -39,7 +39,7 @@ PARAMS = {'dataset': DATASET,
           'loss_name': LOSS_NAME,
           'batch_size': BATCH_SIZE,
           'n_filters': N_FILTERS,
-          'lr': LEARNING_RATE,
+          'learning_rate': LEARNING_RATE,
           'optimizer_name': OPTIMIZER_NAME,
           'architecture_name': ARCHITECTURE_NAME,
           'save_dir': SAVE_DIR
@@ -49,6 +49,9 @@ PARAMS = {'dataset': DATASET,
 
 
 def choose_architecture(arch_name):
+    '''
+    DOC
+    '''
     if arch_name == 'unet':
         return UNET
     elif arch_name == 'deconvnet':
@@ -86,13 +89,13 @@ def train_model(params, save=False, verbose=2, gridsearch=False, folds=5):
         monitor='val_loss', patience=20)
     if gridsearch:
         kfold = KFold(folds, shuffle=True)
-        cv = {'epoch': [], 'loss': [], 'val_loss': []}
+        cross_val = {'epoch': [], 'loss': [], 'val_loss': []}
         model_arch = choose_architecture(params['architecture_name'])
         for train_idx, val_idx in progress(kfold.split(images)):
             model = model_arch(n_filters=params['n_filters'],
                                input_shape=shape,
                                optimizer_name=params['optimizer_name'],
-                               lr=params['lr'],
+                               learning_rate=params['learning_rate'],
                                loss_name=params['loss_name']).create_model()
             x_train = images[train_idx]
             y_train = masks[train_idx]
@@ -110,16 +113,16 @@ def train_model(params, save=False, verbose=2, gridsearch=False, folds=5):
                              validation_steps=x_val.shape[0]//params['batch_size'], verbose=verbose,
                              callbacks=[early_stop])
             history = hist.history
-            cv['loss'].append(history['loss'][-1])
-            cv['val_loss'].append(history['val_loss'][-1])
-            cv['epoch'].append(len(history['loss']))
-        return cv
+            cross_val['loss'].append(history['loss'][-1])
+            cross_val['val_loss'].append(history['val_loss'][-1])
+            cross_val['epoch'].append(len(history['loss']))
+        return cross_val
     else:
         model_arch = choose_architecture(params['architecture_name'])
         model = model_arch(n_filters=params['n_filters'],
                            input_shape=shape,
                            optimizer_name=params['optimizer_name'],
-                           lr=params['lr'],
+                           learning_rate=params['learning_rate'],
                            loss_name=params['loss_name']).create_model()
         x_train, x_val, y_train, y_val = train_test_split(
             images, masks, test_size=0.2)
