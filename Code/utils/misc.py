@@ -36,9 +36,8 @@ def upper_round(div: int, num: int) -> int:
     upper round(4, 27) -> 1
     upper round(5, 25) -> 0
     '''
-    x = div*math.ceil(num/div)
-    p = x - num
-    return p
+    upper = div*math.ceil(num/div) - num
+    return upper
 
 
 # %%MAIN

@@ -67,10 +67,16 @@ def dice_coef_v2(y_true, y_pred, smooth=1):
 
 
 def dice_loss_v1(y_true, y_pred):
+    '''
+    Compute dice loss from dice coefficient.
+    '''
     return 1-dice_coef_v1(y_true, y_pred)
 
 
 def dice_loss_v2(y_true, y_pred):
+    '''
+    Compute dice loss from dice coefficient.
+    '''
     return 1-dice_coef_v2(y_true, y_pred)
 
 # %% MAIN

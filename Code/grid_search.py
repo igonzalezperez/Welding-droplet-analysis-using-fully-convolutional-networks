@@ -9,7 +9,7 @@ from train_model import train_model
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 # %%
-DATASET = ['Globular']
+DATASET = ['Spray']
 EPOCHS = [200]
 LOSS_NAME = ['iou']
 BATCH_SIZE = [16, 32, 64]

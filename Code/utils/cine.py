@@ -1,9 +1,8 @@
 '''
-DOC
+Utility functions to read and display .cine file information. It uses the library pycine https://github.com/OTTOMATIC-IO/pycine
 '''
 import cv2
 import numpy as np
-from PIL import Image
 from pycine.color import color_pipeline
 from pycine.raw import read_frames
 

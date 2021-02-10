@@ -17,10 +17,10 @@ def normalizeuint8(image):
     '''
     Receives float image and converts it to uint8 type.
     '''
-    mn = image.min()
-    mx = image.max()
-    mx -= mn
-    image = ((image-mn)/mx)*255
+    min_val = image.min()
+    max_val = image.max()
+    max_val -= min_val
+    image = ((image-min_val)/max_val)*255
     return image.astype(np.uint8)
 
 
