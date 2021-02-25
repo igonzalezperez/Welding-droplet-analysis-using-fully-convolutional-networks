@@ -1,22 +1,22 @@
 '''
 Grid search
 '''
-# %%
+# %% IMPORTS
 import os
 import itertools
 import pandas as pd
 from train_model import train_model
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-# %%
-DATASET = ['Spray']
+# %% VARIABLES
+DATASET = ['Globular']
 EPOCHS = [200]
 LOSS_NAME = ['iou']
-BATCH_SIZE = [16, 32, 64]
-N_FILTERS = [16, 32, 64]
-LEARNING_RATE = [0.01, 0.007, 0.003, 0.001]
+BATCH_SIZE = [8, 16, 32]
+N_FILTERS = [8, 16, 32]
+LEARNING_RATE = [0.01, 0.005, 0.001]
 OPTIMIZER_NAME = ['adam']
-ARCHITECTURE_NAME = ['unet', 'deconvnet', 'multires']
+ARCHITECTURE_NAME = ['deconvnet']
 
 PARAMS = {'dataset': DATASET,
           'epochs': EPOCHS,
@@ -28,10 +28,12 @@ PARAMS = {'dataset': DATASET,
           'architecture_name': ARCHITECTURE_NAME
           }
 
+# %% FUNCTIONS
+
 
 def get_grid(params):
     '''
-    Receives dict of parameters and returns list of dicts with every possible combination.
+    Receives dict of list parameters and returns list of dicts with every possible combination.
     e.g. {'filters':[1,2], 'epochs':[5,6]} -> [{'filters':1, 'epoch':5},{'filters':1, 'epoch':6},
     {'filters':2, 'epoch':5}, {'filters':2, 'epoch':6}].
     '''
@@ -40,7 +42,6 @@ def get_grid(params):
     for values in itertools.product(*map(params.get, keys)):
         grid_space.append(dict(zip(keys, values)))
     return grid_space
-# %%
 
 
 def grid_search(params):
@@ -55,6 +56,8 @@ def grid_search(params):
     records = []
 
     for i, param_dict in enumerate(grid_space):
+        if i < 20:
+            continue
         print(f'Training model {i+1}: {param_dict}')
         cross_val = train_model(param_dict, save=False,
                                 gridsearch=True, verbose=0, folds=4)
@@ -73,7 +76,7 @@ def grid_search(params):
         print(f'''val_loss={val_loss:.4f}\n''')
         records_frame = pd.DataFrame(records)
         filename = os.path.join('Output', 'Saved Models',
-                                'Grid Search', f'{DATASET[0].lower()}_records.xlsx')
+                                'Grid Search', f'{DATASET[0].lower()}_{param_dict["architecture_name"]}_records.xlsx')
         records_frame.to_excel(filename)
 
     return records
@@ -84,6 +87,8 @@ def main():
     Main.
     '''
     grid_search(PARAMS)
+
+# %% MAIN
 
 
 if __name__ == "__main__":

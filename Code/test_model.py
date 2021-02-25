@@ -9,8 +9,8 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 from progressbar import progressbar as progress
 from utils import losses
+from utils.misc import chunks
 from utils.preprocessing import normalizeuint8
-from utils.misc import chunks, get_concat_h
 
 
 gpus = tf.config.experimental.list_physical_devices('GPU')
@@ -18,18 +18,18 @@ if gpus:
     try:
         for gpu in gpus:
             tf.config.experimental.set_memory_growth(gpu, True)
-    except RuntimeError as e:
-        print(e)
+    except RuntimeError as error:
+        print(error)
 # %% VARIABLES
 
-ARCHITECTURE_NAME = 'multires'
-DATASET = 'Globular'
-N_FILTERS = 16
-BATCH_SIZE_TRAIN = 16
-EPOCHS = 100
+ARCHITECTURE_NAME = 'unet'
+DATASET = 'Spray'
+N_FILTERS = 8
+BATCH_SIZE_TRAIN = 8
+EPOCHS = 200
 MODEL_DIR = os.path.join('Output', 'Saved Models',
                          f'{ARCHITECTURE_NAME.lower()}_{DATASET.lower()}_{N_FILTERS}_{BATCH_SIZE_TRAIN}_{EPOCHS}')
-BATCH_SIZE = 1000
+BATCH_SIZE = 10
 
 # %% FUNCTIONS
 
@@ -45,7 +45,7 @@ def test_model(model_dir, batch_size=None):
         print(
             f"Oops! It seems the model folder '~/{MODEL_DIR}' does not exist.")
         return
-    model = tf.keras.models.load_model(params['save_dir'], compile=False)
+    model = tf.keras.models.load_model(MODEL_DIR, compile=False)
 
     if params['optimizer_name'] == 'adam':
         opt = tf.optimizers.Adam(params['learning_rate'])
@@ -84,6 +84,9 @@ def test_model(model_dir, batch_size=None):
 
 
 def plot_preds(dataset):
+    '''
+    DOC
+    '''
     data_img = np.load(os.path.join(
         'Data', 'Image', 'Input', f'{dataset.lower()}_rgb.npz'))
 
@@ -92,10 +95,10 @@ def plot_preds(dataset):
 
     images = data_img['images']
     preds = data_pred['preds']
-    _, ax = plt.subplots(1, 2)
-    for i, p in zip(images, preds):
-        ax[0].imshow(i)
-        ax[1].imshow(p)
+    _, axes = plt.subplots(1, 2)
+    for i, pred in zip(images, preds):
+        axes[0].imshow(i)
+        axes[1].imshow(pred)
         plt.pause(.005)
     plt.show()
 

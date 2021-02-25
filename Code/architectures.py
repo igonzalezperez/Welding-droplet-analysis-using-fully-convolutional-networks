@@ -41,14 +41,14 @@ class UNET():
     def contract_conv_block(self, inputs, filters, bottom=False):
         '''
         Contracting convolutional block. Performs two identical consecutive convolutions of
-        size 3x3.
-        Dropout and BatchNormalization are applied.If the block is not the 'bottom' of the UNet, 2x2
-        maxpooling is applied. And returns output layer (pool) as well as context layer (conv) to be
-        concatenate when upsampling.
+        size 3x3 and specified number of filters.
+        Dropout, Batch normalization and 2x2 Max pooling are applied.
+        Returns output layer (pool) as well as context layer (conv) to be concatenated when upsampling.
         '''
         if filters == self.n_filters or self.input_channels == 1:
             conv_layer = keras.layers.Conv2D
         else:
+            # perform separable convolution if image has multiple channels (RGB)
             conv_layer = keras.layers.SeparableConv2D
 
         conv = conv_layer(filters, (3, 3), activation='relu',
@@ -117,7 +117,7 @@ class UNET():
 
     def create_model(self):
         '''
-        DOC
+        Adds the output layer to the model, compiles it and returns a keras model object.
         '''
         inputs = keras.layers.Input(
             (self.input_height, self.input_width, self.input_channels))
@@ -138,7 +138,7 @@ class UNET():
 
 class DECONVNET(UNET):
     '''
-    Creates keras model with DECONVNET architecture.
+    Creates keras model with DeconvNet architecture.
     '''
 
     def __init__(self, n_filters, input_shape, optimizer_name, learning_rate, loss_name):
@@ -150,7 +150,9 @@ class DECONVNET(UNET):
 
     def conv2dblock(self, inputs, filters, depth):
         '''
-        DOC
+        Contracting convolutional block. Performs identical consecutive convolutions of
+        size 3x3 and specified filters, the number of convolutions is defined by depth parameter.
+        Dropout, Batch normalization and 2x2 max pooling are applied.
         '''
         for i in range(1, depth + 1):
             if i == 1:

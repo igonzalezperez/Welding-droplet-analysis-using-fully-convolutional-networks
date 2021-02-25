@@ -19,20 +19,20 @@ if gpus:
     except RuntimeError as error:
         print(error)
 # %% VARIABLES
-EPOCHS = 100
+EPOCHS = 200
 LOSS_NAME = 'iou'
 BATCH_SIZE = 16
-N_FILTERS = 16
+N_FILTERS = 32
 LEARNING_RATE = .001
 OPTIMIZER_NAME = 'adam'
-ARCHITECTURE_NAME = 'multires'
+ARCHITECTURE_NAME = 'unet'
 
 DATASET = 'Globular'
 
-TRAIN = True
-
 SAVE_DIR = os.path.join('Output', 'Saved Models',
                         f'{ARCHITECTURE_NAME.lower()}_{DATASET.lower()}_{N_FILTERS}_{BATCH_SIZE}_{EPOCHS}')
+CHECKPOINT_DIR = os.path.join(
+    'Output', 'Saved Models', 'Checkpoints', '{epoch:02d}-{val_loss:.2f}')
 
 PARAMS = {'dataset': DATASET,
           'epochs': EPOCHS,
@@ -42,7 +42,8 @@ PARAMS = {'dataset': DATASET,
           'learning_rate': LEARNING_RATE,
           'optimizer_name': OPTIMIZER_NAME,
           'architecture_name': ARCHITECTURE_NAME,
-          'save_dir': SAVE_DIR
+          'save_dir': SAVE_DIR,
+          'checkpoint_dir': CHECKPOINT_DIR
           }
 
 # %%FUNCTIONS
@@ -87,6 +88,8 @@ def train_model(params, save=False, verbose=2, gridsearch=False, folds=5):
 
     early_stop = tf.keras.callbacks.EarlyStopping(
         monitor='val_loss', patience=20)
+    checkpoint = tf.keras.callbacks.ModelCheckpoint(
+        params['checkpoint_dir'], monitor='val_loss', save_best_only=True, save_weights_only=True)
     if gridsearch:
         kfold = KFold(folds, shuffle=True)
         cross_val = {'epoch': [], 'loss': [], 'val_loss': []}
@@ -134,10 +137,12 @@ def train_model(params, save=False, verbose=2, gridsearch=False, folds=5):
                          steps_per_epoch=x_train.shape[0]//params['batch_size'],
                          validation_data=val_ds,
                          validation_steps=x_val.shape[0]//params['batch_size'], verbose=verbose,
-                         callbacks=[early_stop])
+                         callbacks=[early_stop, checkpoint])
         history = hist.history
         history['params'] = params
         if save:
+            model.load_weights(tf.train.latest_checkpoint(
+                os.path.dirname(params['checkpoint_dir'])))
             model.save(params['save_dir'])
             with open(params['save_dir'] + '/trainHistoryDict', 'wb') as file_pi:
                 pickle.dump(history, file_pi)
@@ -148,7 +153,7 @@ def train_model(params, save=False, verbose=2, gridsearch=False, folds=5):
             plt.ylabel('Loss')
             plt.legend()
             plt.tight_layout()
-            plt.savefig(params['save_dir'] + '/loss_curve', format='pdf')
+            plt.savefig(params['save_dir'] + '/loss_curve.pdf', format='pdf')
     return history
 
 

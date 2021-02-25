@@ -9,7 +9,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from progressbar import progressbar as progress
 from scipy.spatial import distance
-from PIL import Image
 from cv2 import cv2
 
 # %% VARIABLES
@@ -20,10 +19,10 @@ P1 = 334*10 ^ (-6)  # period between frames in [s]
 P2 = 333*10 ^ (-6)
 
 ARCHITECTURE_NAME = 'unet'
-DATASET = 'Globular'
-N_FILTERS = 16
-BATCH_SIZE_TRAIN = 16
-EPOCHS = 100
+DATASET = 'Spray'
+N_FILTERS = 8
+BATCH_SIZE_TRAIN = 8
+EPOCHS = 200
 PREDS_DIR = os.path.join('Output', 'Predictions',
                          f'{ARCHITECTURE_NAME.lower()}_{DATASET.lower()}_{N_FILTERS}_{BATCH_SIZE_TRAIN}_{EPOCHS}_preds.npz')
 
@@ -57,36 +56,6 @@ def compute_properties(img):
     return centroids, area, perimeter
 
 
-def get_concat_h(im1, im2):
-    '''
-    Horizontaly join two images of same height.
-    im1 (PIL Image object)
-    im2 (PIL Image object)
-    '''
-    dst = Image.new('RGB', (im1.width + im2.width, im1.height))
-    dst.paste(im1, (0, 0))
-    dst.paste(im2, (im1.width, 0))
-    return dst
-
-
-# def draw_centroid(cents, image):
-#     '''
-#     doc
-#     '''
-#     line_len = 3
-#     image_c = image
-#     for c in cents:
-#         line_1 = [(c[0]-line_len, c[1]-line_len),
-#                   (c[0]+line_len, c[1]+line_len)]
-#         line_2 = [(c[0]-line_len, c[1]+line_len),
-#                   (c[0]+line_len, c[1]-line_len)]
-#         draw = ImageDraw.Draw(image_c)
-#         draw.line(line_1, fill=0, width=1)
-#         draw.line(line_2, fill=0, width=1)
-#         del draw
-#     return image_c
-
-
 def save_properties():
     '''
     Computes properties for every image in a dataset, then saves the lists
@@ -118,17 +87,17 @@ def save_properties():
 
 def vel_norm(p_1, p_2):
     '''
-    DOC
+    Calculates the norm of a vector that goes from p_1 to p_2
     '''
-    return np.linalg.norm(np.subtract(p_2, p_1)*PX_TO_MM)
+    return np.linalg.norm(np.subtract(p_2, p_1))
 
 
-def time_period(time_list):
+def list_loop(input_list):
     '''
-    DOC
+    Yields every element of a list in a cycle. e.g. [1, 2, 3] will yield ->1, 2, 3, 1, 2...
     '''
     while True:
-        for i in time_list:
+        for i in input_list:
             yield i
 
 
