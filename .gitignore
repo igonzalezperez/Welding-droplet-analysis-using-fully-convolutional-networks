@@ -127,3 +127,5 @@ Docs
 Code/post_grid_search.py
 Output/Saved Models/Checkpoints
 Output/Predictions
+Output/Videos/area_spray
+Output/Videos/area_mask_spray
