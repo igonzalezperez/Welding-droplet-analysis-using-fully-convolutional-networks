@@ -18,8 +18,15 @@ class UNET():
     def __init__(self, n_filters, input_shape, optimizer_name, learning_rate, loss_name):
         '''
         Set network parameters.
+
+        Arguments:
+        n_filters {int} -- number of initial convolutional filters
+        input_shape {tuple} -- input shape of the image (width, height)
+        optimizer_name {str} -- name of the optimizer ('adam', 'adadelta', etc)
+        learning_rate {float} -- learning rate fot the optimizer
+        loss_name {str} -- name of the loss to minimize when training
         '''
-        self.base = 2**5
+        self.base = 2**5  # input image will be padded with zeros so the width/height is multiple of this number
         self.n_filters = n_filters
         self.input_height, self.input_width, self.input_channels = input_shape
         self.learning_rate = learning_rate
@@ -40,10 +47,20 @@ class UNET():
 
     def contract_conv_block(self, inputs, filters, bottom=False):
         '''
-        Contracting convolutional block. Performs two identical consecutive convolutions of
-        size 3x3 and specified number of filters.
-        Dropout, Batch normalization and 2x2 Max pooling are applied.
-        Returns output layer (pool) as well as context layer (conv) to be concatenated when upsampling.
+        Contracting convolutional block. Performs two succesive convolutions with kernel shape 3x3.
+        Dropout of 0.1, batch normalization and 'relu' activation are applied.
+        Max pooling of 2x2 is applied.
+        Returns the layer before and after pooling to make use of skip layers.
+
+        Arguments:
+        inputs {keras layer} -- input layer
+        filters {int} -- number of convolutional filters
+
+        Keyword Arguments:
+        bottom {bool}: checks if its the last contracting layer (default: {False})
+
+        Returns:
+        [conv, pool] {keras layer, keras layer} -- [last convolutional layer / skip layer , output layer]
         '''
         if filters == self.n_filters or self.input_channels == 1:
             conv_layer = keras.layers.Conv2D
@@ -65,10 +82,18 @@ class UNET():
 
     def expand_conv_block(self, inputs, filters, concat_layer):
         '''
-        Expanding convolutional block. Concatenates inputs with previous context layer from
-        contracting path. Performs Conv2DTranspose to upsample inputs layer. Performs two identical
-        consecutive convolutions of size 3x3. Dropout and BatchNormalization are applied.
-        Returns last layer.
+        Expanding convolutional block. Performs transposed convolution of kernel shape 2x2 and two succesive convolutions with kernel shape 3x3.
+        Uses skip layers returned from contract_conv_block and concatenates after transposed convolution.
+        Dropout of 0.2, batch normalization and 'relu' activation are applied.
+        Max pooling of 2x2 is applied.
+
+        Arguments:
+        inputs {keras layer} -- input layer
+        filters {int} -- number of convolutional filters
+        concat_layer {keras layer} -- last convolutional layer from corresponding contracting path
+
+        Returns:
+        [conv] {keras layer} -- output layer
         '''
         if filters == self.n_filters or self.input_channels == 1:
             conv_layer = keras.layers.Conv2D
@@ -88,9 +113,14 @@ class UNET():
 
     def unet(self, inputs):
         '''
-        Builds upon 4 contracting blocks and 4 expanding blocks. Filters are doubled when
-        contracting and then halved when expanding. Returns last layer with the same shape as the
-        inputs but with N_FILTERS.
+        Builds U-Net architecture upon 4 contracting blocks each doubling number the of initial filters and 4 expanding blocks halving the number
+        of filters. Skip connections are returned by contracting blocks to then concatenate with expanding blocks.
+
+        Arguments:
+        inputs [keras layer] -- input layer
+
+        Returns:
+        output [keras layer] -- output layer
         '''
         # UNET ENCODER
         # CONTRACTING PATH
@@ -112,12 +142,15 @@ class UNET():
         # BLOCK 8
         conv8 = self.expand_conv_block(conv7, self.n_filters*2, conv2)
         # BLOCK 9
-        conv9 = self.expand_conv_block(conv8, self.n_filters, conv1)
-        return conv9
+        output = self.expand_conv_block(conv8, self.n_filters, conv1)
+        return output
 
     def create_model(self):
         '''
-        Adds the output layer to the model, compiles it and returns a keras model object.
+        Adds the output layer to the model with 'sigmoid' activation, compiles it and returns a keras model object.
+
+        Returns:
+        _model {keras model} -- keras model with U-Net architecture
         '''
         inputs = keras.layers.Input(
             (self.input_height, self.input_width, self.input_channels))
@@ -144,32 +177,57 @@ class DECONVNET(UNET):
     def __init__(self, n_filters, input_shape, optimizer_name, learning_rate, loss_name):
         '''
         Set network parameters.
+
+        Arguments:
+        n_filters {int} -- number of initial convolutional filters
+        input_shape {tuple} -- input shape of the image (width, height)
+        optimizer_name {str} -- name of the optimizer ('adam', 'adadelta', etc)
+        learning_rate {float} -- learning rate for the optimizer
+        loss_name {str} -- name of the loss to minimize when training
         '''
         UNET.__init__(self, n_filters, input_shape,
                       optimizer_name, learning_rate, loss_name)
 
     def conv2dblock(self, inputs, filters, depth):
         '''
-        Contracting convolutional block. Performs identical consecutive convolutions of
-        size 3x3 and specified filters, the number of convolutions is defined by depth parameter.
-        Dropout, Batch normalization and 2x2 max pooling are applied.
+        Contracting convolutional block. Performs a number of succesive convolutions of kernel shape 3x3. Batch normalization and 'relu'
+        activation are applied.
+
+        Arguments:
+        inputs {keras layer} -- input layer
+        filters {int} -- number of convolutional filters
+        depth {int} -- number of succesive convolutions
+
+        Returns:
+        [conv] {keras layer} -- [output layer]
         '''
         for i in range(1, depth + 1):
             if i == 1:
-                conv2d = keras.layers.Conv2D(
+                conv = keras.layers.Conv2D(
                     filters, (3, 3), padding='same', use_bias=False)(inputs)
             else:
-                conv2d = keras.layers.Conv2D(
-                    filters, (3, 3), padding='same', use_bias=False)(conv2d)
+                conv = keras.layers.Conv2D(
+                    filters, (3, 3), padding='same', use_bias=False)(conv)
 
-            conv2d = keras.layers.BatchNormalization()(conv2d)
-            conv2d = keras.layers.Activation('relu')(conv2d)
-        conv2d = keras.layers.MaxPooling2D((2, 2))(conv2d)
-        return conv2d
+            conv = keras.layers.BatchNormalization()(conv)
+            conv = keras.layers.Activation('relu')(conv)
+        conv = keras.layers.MaxPooling2D((2, 2))(conv)
+        return conv
 
     def conv2dtransposeblock(self, inputs, filters, depth):
         '''
-        DOC
+        Expanding convolutional block. Performs transposed convolution of kernel shape 2x2 and a number of succesive convolutions with kernel
+        shape 3x3.
+        Uses skip layers returned from contract_conv_block and concatenates after transposed convolution.
+        Dropout of 0.2, batch normalization and 'relu' activation are applied. Max pooling of 2x2 is applied.
+
+        Arguments:
+        inputs {keras layer} -- input layer
+        filters {int} -- number of convolutional filters
+        depth {int} -- number of succesive convolutions
+
+        Returns:
+        [conv] {keras layer} -- output layer
         '''
         deconv = keras.layers.Conv2DTranspose(
             filters, (2, 2), strides=(2, 2), use_bias=False)(inputs)
@@ -189,7 +247,14 @@ class DECONVNET(UNET):
 
     def deconvnet(self, inputs):
         '''
-        DOC
+        Builds DeconvNet architecture upon 4 contracting blocks each doubling the number of initial filters and 4 expanding blocks halving
+        the number of filters.
+
+        Arguments:
+        inputs [keras layer] -- input layer
+
+        Returns:
+        output [keras layer] -- output layer
         '''
         b_1 = self.conv2dblock(inputs, self.n_filters, 2)
         b_2 = self.conv2dblock(b_1, self.n_filters*2, 2)
@@ -221,12 +286,18 @@ class DECONVNET(UNET):
             b_9, self.n_filters*4, 3)
         b_11 = self.conv2dtransposeblock(
             b_10, self.n_filters*2, 2)
-        b_12 = self.conv2dtransposeblock(
+        output = self.conv2dtransposeblock(
             b_11, self.n_filters, 2)
 
-        return b_12
+        return output
 
     def create_model(self):
+        '''
+        Adds the output layer to the model with 'sigmoid' activation, compiles it and returns a keras model object.
+
+        Returns:
+        _model [keras model] -- keras model with DeconvNet architecture
+        '''
         inputs = keras.layers.Input(
             (self.input_height, self.input_width, self.input_channels))
         pad_input = keras.layers.ZeroPadding2D(self.padding)(inputs)
@@ -246,12 +317,19 @@ class DECONVNET(UNET):
 
 class MULTIRES(UNET):
     '''
-    DOC
+    Creates keras model with MultiResUnet architecture.
     '''
 
     def __init__(self, n_filters, input_shape, optimizer_name, learning_rate, loss_name):
         '''
         Set network parameters.
+
+        Arguments:
+        n_filters {int} -- number of initial convolutional filters
+        input_shape {tuple} -- input shape of the image (width, height)
+        optimizer_name {str} -- name of the optimizer ('adam', 'adadelta', etc)
+        learning_rate {float} -- learning rate fot the optimizer
+        loss_name {str} -- name of the loss to minimize when training
         '''
         UNET.__init__(self, n_filters, input_shape,
                       optimizer_name, learning_rate, loss_name)
@@ -394,15 +472,10 @@ class MULTIRES(UNET):
 
     def create_model(self):
         '''
-        MultiResUNet
-
-        Arguments:
-            height {int} -- height of image
-            width {int} -- width of image
-            n_channels {int} -- number of channels in image
+        Adds the output layer to the model with 'sigmoid' activation, compiles it and returns a keras model object.
 
         Returns:
-            [keras model] -- MultiResUNet model
+        _model [keras model] -- keras model with MultiResUnet architecture
         '''
 
         inputs = keras.layers.Input(
