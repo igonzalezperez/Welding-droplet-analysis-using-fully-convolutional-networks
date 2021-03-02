@@ -6,10 +6,20 @@ import os
 import pickle
 import numpy as np
 import tensorflow as tf
+import matplotlib
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split, KFold
 from progressbar import progressbar as progress
 from architectures import UNET, DECONVNET, MULTIRES
+from utils.misc import set_size
+
+matplotlib.use("pgf")
+matplotlib.rcParams.update({
+    "pgf.texsystem": "pdflatex",
+    'font.family': 'serif',
+    'text.usetex': True,
+    'pgf.rcfonts': False,
+})
 
 gpus = tf.config.experimental.list_physical_devices('GPU')
 if gpus:
@@ -21,13 +31,13 @@ if gpus:
 # %% VARIABLES
 EPOCHS = 200
 LOSS_NAME = 'iou'
-BATCH_SIZE = 16
-N_FILTERS = 32
+BATCH_SIZE = 8
+N_FILTERS = 8
 LEARNING_RATE = .001
 OPTIMIZER_NAME = 'adam'
 ARCHITECTURE_NAME = 'unet'
 
-DATASET = 'Globular'
+DATASET = 'Spray'
 
 SAVE_DIR = os.path.join('Output', 'Saved Models',
                         f'{ARCHITECTURE_NAME.lower()}_{DATASET.lower()}_{N_FILTERS}_{BATCH_SIZE}_{EPOCHS}')
@@ -144,17 +154,31 @@ def train_model(params, save=False, verbose=2, gridsearch=False, folds=5):
             model.load_weights(tf.train.latest_checkpoint(
                 os.path.dirname(params['checkpoint_dir'])))
             model.save(params['save_dir'])
-            with open(params['save_dir'] + '/trainHistoryDict', 'wb') as file_pi:
+            with open(os.path.join(params['save_dir'], 'trainHistoryDict'), 'wb') as file_pi:
                 pickle.dump(history, file_pi)
 
-            plt.plot(history['loss'], label='Loss')
-            plt.plot(history['val_loss'], label='Validation loss')
-            plt.xlabel('Epoch')
-            plt.ylabel('Loss')
-            plt.legend()
-            plt.tight_layout()
-            plt.savefig(params['save_dir'] + '/loss_curve.pdf', format='pdf')
+            plot_train_loss(params)
     return history
+
+
+def plot_train_loss(params):
+    '''
+    Plot training loss curves of trained model.
+    '''
+    with open(os.path.join(params['save_dir'], 'trainHistoryDict'), 'rb') as file_pi:
+        history = pickle.load(file_pi)
+    fig, axes = plt.subplots(1, 1, figsize=set_size(
+        472.03123, 1, aspect_ratio=.4))
+    axes.plot(history['loss'], label='Train')
+    axes.plot(history['val_loss'], label='Validation')
+    axes.axvline(x=history['val_loss'].index(
+        min(history['val_loss']))+1, color='k', linestyle='--', label='Best model')
+    axes.set_xlabel('Epoch')
+    axes.set_ylabel('Loss')
+    axes.legend()
+    fig.tight_layout()
+    fig.savefig(os.path.join('Output', 'Plots',
+                             f'{params["dataset"].lower()}_train_loss_curve.pgf'), bbox_inches='tight')
 
 
 def main():
@@ -167,4 +191,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    plot_train_loss(PARAMS)
