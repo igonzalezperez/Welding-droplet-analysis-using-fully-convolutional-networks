@@ -4,11 +4,21 @@ Augment data
 # %% IMPORTS
 import os
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
+import seaborn as sns
 from progressbar import progressbar as progress
 from imgaug import augmenters as iaa
 from imgaug.augmentables.segmaps import SegmentationMapsOnImage
-
+from utils.misc import set_size
+sns.set()
+matplotlib.use("pgf")
+matplotlib.rcParams.update({
+    "pgf.texsystem": "pdflatex",
+    'font.family': 'serif',
+    'text.usetex': True,
+    'pgf.rcfonts': False,
+})
 
 # %% VARIABLES
 DATASET = ('Globular', 'Spray')
@@ -23,12 +33,13 @@ elif DATASET == 'Globular':
 
 # Define our augmentation pipeline.
 SEQ = iaa.Sequential([
-    iaa.Dropout([0.05, 0.2]),      # drop 5% or 20% of all pixels
-    iaa.Sharpen((0.0, 1.0)),       # sharpen the image
+    iaa.Dropout([0, 0.05]),      # drop 5% or 20% of all pixels
+    # iaa.Sharpen((0.0, 1.0)),       # sharpen the image
     # rotate by -45 to 45 degrees (affects segmaps)
     iaa.Affine(rotate=(-45, 45)),
     # apply water effect (affects segmaps)
-    iaa.ElasticTransformation(alpha=50, sigma=5)
+    iaa.ElasticTransformation(alpha=(20, 50), sigma=(4, 5)),
+    iaa.AdditiveGaussianNoise(scale=(0, 15))
 ], random_order=True)
 
 
@@ -68,12 +79,13 @@ def plot_augmented_samples(dataset):
     num = np.random.randint(low=0, high=len(data['images']))
     img = data['images'][num]
     mask = data['masks'][num]
-    _, axes = plt.subplots(3, 4, sharex=True, sharey=True, figsize=(10, 10))
+    fig, axes = plt.subplots(
+        3, 4, sharex=True, sharey=True, figsize=set_size(472.03123, 1, aspect_ratio=1))
     coord_1 = next(coord)
     coord_2 = next(coord)
-    axes[coord_1].imshow(img)
-    axes[coord_2].imshow(mask)
-    axes[coord_1].set_title('Original image')
+    axes[coord_1].imshow(img, cmap='viridis')
+    axes[coord_2].imshow(mask, cmap='gray')
+    axes[coord_1].set_title(f'Original image\n(Frame {num})')
     axes[coord_2].set_title('Original mask')
 
     mask = mask.astype(bool)
@@ -86,13 +98,14 @@ def plot_augmented_samples(dataset):
         sg_map = msk.draw(size=img_shape)[0]
         sg_map = ((sg_map[..., 0] != 0)*255).astype(np.uint8)
 
-        axes[next(coord)].imshow(image)
-        axes[next(coord)].imshow(sg_map)
+        axes[next(coord)].imshow(image, cmap='viridis')
+        axes[next(coord)].imshow(sg_map, cmap='gray')
 
     plt.xticks([])
     plt.yticks([])
-    plt.tight_layout()
-    plt.show()
+    fig.tight_layout()
+    fig.savefig(os.path.join('Output', 'Plots',
+                             'augmented_sample', 'augmented_sample.pgf'), bbox_inches='tight')
 
 
 def main():
@@ -124,4 +137,4 @@ def main():
 
 # %% MAIN
 if __name__ == "__main__":
-    main()
+    plot_augmented_samples(DATASET[0])
