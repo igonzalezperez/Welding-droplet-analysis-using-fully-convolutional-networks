@@ -1,28 +1,42 @@
 '''
-DOC
+Functions that output plots and animations of
+relevant geometric and kinematic droplet properties
+using predicted segmentation maps.
 '''
 # %% IMPORTS
 import os
 import pickle
 import numpy as np
 import seaborn as sns
-import matplotlib as mpl
+import matplotlib
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
 from matplotlib import animation
 from matplotlib.animation import FuncAnimation
 from scipy.signal import find_peaks
-from utils.preprocessing import rgb2gray
 from utils.postprocessing import parse_centroid_coords, smooth_signal
-mpl.rcParams['animation.ffmpeg_path'] = os.path.abspath(
+from utils.misc import set_size
+
+# video settings
+matplotlib.rcParams['animation.ffmpeg_path'] = os.path.abspath(
     'C:\\ffmpeg\\bin\\ffmpeg.exe')
+# output images for LaTex
+matplotlib.use("pgf")
+matplotlib.rcParams.update({
+    "pgf.texsystem": "pdflatex",
+    'font.family': 'serif',
+    'text.usetex': True,
+    'pgf.rcfonts': False,
+})
+# set style
 sns.set()
 
 # %% VAIRABLES
-
 # Pixel to distance conversions
 # 26 px = .045 in = 1.143 mm
 # 1px = 0.04396153846153846 mm = 4.396153846153846 * 10^(-5) m
-
+#
+# LaTex \textwidth = 472.03123 pt. Useful for figure sizing
 
 ARCHITECTURE_NAME = 'unet'
 DATASET = 'Spray'
@@ -113,6 +127,61 @@ def animate_centroids(save=False):
         plt.show()
 
 
+def plot_areas():
+    '''
+    DOC
+    '''
+    def areas_img_generator():
+        for i, img in enumerate(IMAGES):
+            yield AREAS[i], img
+    data = areas_img_generator()
+    areas, img = next(data)
+    fig = plt.figure()
+    grid_spec = fig.add_gridspec(2, 1)
+    ax0 = fig.add_subplot(grid_spec[0, 0])
+    with sns.axes_style('dark'):
+        ax1 = fig.add_subplot(grid_spec[1, 0])
+
+    if len(areas) == 0:
+        ax0.plot(0, 0, 'bo')
+    else:
+        for area in areas:
+            if len(areas) > 1:
+                ax0.plot(0, area, 'rx')
+            elif len(areas) == 1:
+                ax0.plot(0, area, 'k.')
+
+    image_ax = ax1.imshow(img)
+
+    ax0.set_ylim([0, max(max(AREAS))])
+
+    original_area = []
+    for areas in AREAS:
+        if len(areas) > 0:
+            original_area.append(sum(areas))
+        else:
+            original_area.append(0)
+    smooth_area = smooth_signal(np.array(original_area), 51)
+    peaks = find_peaks(-smooth_area, width=50,
+                       prominence=300, height=-2500)
+    for i, data_i in enumerate(data):
+        areas, img = data_i
+        if len(areas) == 0:
+            ax0.plot(i, 0, 'bo')
+        else:
+            for area in areas:
+                if len(areas) > 1:
+                    ax0.plot(i, area, 'rx')
+                elif len(areas) == 1:
+                    ax0.plot(i, area, 'k.')
+        if i in peaks[0]:
+            ax0.axvline(x=i, color='k', alpha=0.4, linestyle='--')
+        with sns.axes_style('dark'):
+            image_ax.set_data(img)
+        fig.suptitle(f'Frame #{i}')
+        plt.savefig(os.path.join('Output', 'Videos', 'area_spray', f'{i}.jpg'))
+
+
 def animate_areas(save=False):
     '''
     DOC
@@ -174,6 +243,92 @@ def animate_areas(save=False):
                               f'areas_{DATASET.lower()}.mp4'), writer=WRITER)
     else:
         plt.show()
+
+
+def plot_areas_with_masks():
+    '''
+    DOC
+    '''
+    def areas_centroid_img_mask_generator():
+        for i, cent_img_mask in enumerate(zip(CENTROIDS, IMAGES, MASKS)):
+            yield AREAS[i], *cent_img_mask
+    data = areas_centroid_img_mask_generator()
+    areas, cent, img, mask = next(data)
+    x_coord, y_coord = parse_centroid_coords(cent)
+    fig = plt.figure()
+    grid_spec = fig.add_gridspec(2, 2)
+    ax0 = fig.add_subplot(grid_spec[0, :])
+    with sns.axes_style('dark'):
+        ax1 = fig.add_subplot(grid_spec[1, 0])
+        ax2 = fig.add_subplot(grid_spec[1, 1])
+
+    if len(areas) == 0:
+        ax0.plot(0, 0, 'bo')
+    else:
+        for area in areas:
+            if len(areas) > 1:
+                ax0.plot(0, area, 'rx')
+            elif len(areas) == 1:
+                ax0.plot(0, area, 'k.')
+
+    image_ax = ax1.imshow(img)
+    mask_ax = ax2.imshow(mask)
+    ax0.set_ylim([0, max(max(AREAS))])
+
+    if len(cent) > 1:
+        single_droplet_1, = ax1.plot([], [], 'k.')
+        multi_droplet_1, = ax1.plot(x_coord, y_coord, 'rx')
+
+        single_droplet_2, = ax2.plot([], [], 'k.')
+        multi_droplet_2, = ax2.plot(x_coord, y_coord, 'rx')
+    elif len(cent) == 1:
+        single_droplet_1, = ax1.plot(x_coord, y_coord, 'k.')
+        multi_droplet_1, = ax1.plot([], [], 'rx')
+
+        single_droplet_2, = ax2.plot(x_coord, y_coord, 'k.')
+        multi_droplet_2, = ax2.plot([], [], 'rx')
+
+    else:
+        single_droplet_1, = ax1.plot([], [], 'k.')
+        multi_droplet_1, = ax1.plot([], [], 'rx')
+
+        single_droplet_2, = ax2.plot([], [], 'k.')
+        multi_droplet_2, = ax2.plot([], [], 'rx')
+
+    for i, _data in enumerate(data):
+        areas, cent, img, mask = _data
+        if i < 6411:
+            continue
+        if len(areas) == 0:
+            ax0.plot(i, 0, 'bo')
+        else:
+            for area in areas:
+                if len(areas) > 1:
+                    ax0.plot(i, area, 'rx')
+                elif len(areas) == 1:
+                    ax0.plot(i, area, 'k.')
+        image_ax.set_data(img)
+        mask_ax.set_data(mask)
+
+        x_coord, y_coord = parse_centroid_coords(cent)
+        if len(cent) > 1:
+            single_droplet_1.set_data([], [])
+            single_droplet_2.set_data([], [])
+            multi_droplet_1.set_data(x_coord, y_coord)
+            multi_droplet_2.set_data(x_coord, y_coord)
+        elif len(cent) == 1:
+            single_droplet_1.set_data(x_coord, y_coord)
+            single_droplet_2.set_data(x_coord, y_coord)
+            multi_droplet_1.set_data([], [])
+            multi_droplet_2.set_data([], [])
+        else:
+            single_droplet_1.set_data([], [])
+            single_droplet_2.set_data([], [])
+            multi_droplet_1.set_data([], [])
+            multi_droplet_2.set_data([], [])
+        fig.suptitle(f'Frame #{i}')
+        plt.savefig(os.path.join('Output', 'Videos',
+                                 'area_mask_spray', f'{i}.jpg'))
 
 
 def animate_areas_with_masks(save=False):
@@ -255,7 +410,7 @@ def animate_areas_with_masks(save=False):
             single_droplet_2.set_data([], [])
             multi_droplet_1.set_data([], [])
             multi_droplet_2.set_data([], [])
-        plt.title(f'Frame #{i}')
+        fig.suptitle(f'Frame #{i}')
         return image_ax, mask_ax, single_droplet_1, multi_droplet_1, single_droplet_2, multi_droplet_2,
 
     ani = FuncAnimation(fig, animate, save_count=N_FRAMES-1)
@@ -342,46 +497,63 @@ def plot_strip(num, save=False):
     cent = GEOMETRY['centroids'][num]
     area = GEOMETRY['areas'][num]
 
-    image = DATA_RGB['images'][num]
+    image = DATA_GRAY['images'][num]
     mask = DATA_MASKS['preds'][num]
 
     max_area = np.argmax(area)
     height = cent[max_area][1]
 
-    strip = rgb2gray(image[height, :])
-    mask_strip = mask[height, :]
+    strip = image[height, :].astype('float64')
+    mask_strip = mask[height, :].astype('float64')
 
-    fig1 = plt.figure()
+    fig = plt.figure(figsize=set_size(
+        472.03123, 1, aspect_ratio=1, subplots=(4, 4)))
+    gsc = gridspec.GridSpec(2, 2, figure=fig)
+
     with sns.axes_style('dark'):
-        ax1 = plt.axes()
-    ax1.imshow(image)
-    ax1.plot(strip, 'k', linewidth=1)
-    ax1.plot(mask_strip, 'r', linewidth=1)
-    ax1.plot([0, strip.shape[0]-2], [height, height], linewidth=1)
-    plt.tight_layout()
+        ax0 = fig.add_subplot(gsc[0, 0])
 
-    fig2 = plt.figure()
-    ax2 = plt.axes()
-    ax2.plot(strip, linewidth=1, label='real pixel value')
-    ax2.plot(mask_strip, linewidth=1, label='prediction')
-    ax2.set_xlim([0, strip.shape[0]-2])
-    ax2.legend()
-    plt.tight_layout()
+    ax0.set_xticks([])
+    ax0.set_yticks([])
+    ax0.set_xlim([0, image.shape[1]])
+    ax0.set_ylim([image.shape[0], 0])
+    ax0.imshow(image, cmap='viridis')
+    ax0.plot(-strip+image.shape[0]-2, 'k', linewidth=1)
+    ax0.plot(-mask_strip+image.shape[0]-2, 'r', linewidth=1)
+    ax0.plot([0, strip.shape[0]-2], [height, height],
+             linewidth=1, color='yellow', linestyle='--')
+    ax0.set_title(f'Frame {num}')
+    ax0.text(0.5, -0.1, "(a)", size=12, ha="center",
+             transform=ax0.transAxes)
 
-    fig3 = plt.figure()
+    ax1 = fig.add_subplot(gsc[1, 0])
+
+    ax1.plot(strip, linewidth=1, label='real pixel value', color='k')
+    ax1.plot(mask_strip, linewidth=1, label='prediction', color='r')
+    ax1.set_xlim([0, strip.shape[0]-2])
+    ax1.text(0.5, -0.2, "(c)", size=12, ha="center",
+             transform=ax1.transAxes)
+    ax1.set_xlabel('Pixel')
+    ax1.set_ylabel('Pixel value')
+    ax1.xaxis.tick_top()
+    ax1.legend()
     with sns.axes_style('dark'):
-        ax3 = plt.axes()
-    ax3.imshow(mask)
-    plt.title(f'Frame #{num}')
-    plt.tight_layout()
+        ax2 = fig.add_subplot(gsc[0, 1])
 
+    ax2.imshow(mask, cmap='gray')
+    ax2.plot([0, strip.shape[0]-2], [height, height],
+             linewidth=1, color='yellow', linestyle='--')
+    ax2.set_xticks([])
+    ax2.set_yticks([])
+    ax2.text(0.5, -0.1, "(b)", size=12, ha="center",
+             transform=ax2.transAxes)
+
+    fig.tight_layout()
     if save:
-        fig1.savefig(os.path.join('Output', 'Plots',
-                                  f'boundary_{DATASET.lower()}_{num}_1.pdf'), format='pdf')
-        fig2.savefig(os.path.join('Output', 'Plots',
-                                  f'boundary_{DATASET.lower()}_{num}_2.pdf'), format='pdf')
-        fig3.savefig(os.path.join('Output', 'Plots',
-                                  f'boundary_{DATASET.lower()}_{num}_3.pdf'), format='pdf')
+        os.makedirs(os.path.join('Output', 'Plots',
+                                 f'boundary_{DATASET.lower()}'), exist_ok=True)
+        fig.savefig(os.path.join('Output', 'Plots', f'boundary_{DATASET.lower()}',
+                                 f'{num}.pgf'), bbox_inches='tight')
     else:
         plt.show()
 
@@ -444,11 +616,12 @@ def plot_smooth_area():
 # %% MAIN
 if __name__ == "__main__":
     # animate_centroids(save=True)
-    animate_centroids_with_masks(save=True)
-    # animate_areas(save=True)
-    # animate_areas_with_masks(save=True)
+    # animate_centroids_with_masks(save=True)
+    # animate_areas(save=False)
+    # plot_areas_with_masks()
+    # animate_areas_with_masks(save=False)
     # plot_smooth_area()
-
+    plot_strip(500, save=True)
     # def plot_perimeters(cont=True):
     # geom = GEOMETRY['perimeters']
 
