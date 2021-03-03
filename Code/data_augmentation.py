@@ -11,7 +11,11 @@ from progressbar import progressbar as progress
 from imgaug import augmenters as iaa
 from imgaug.augmentables.segmaps import SegmentationMapsOnImage
 from utils.misc import set_size
-sns.set()
+
+# video settings
+matplotlib.rcParams['animation.ffmpeg_path'] = os.path.abspath(
+    'C:\\ffmpeg\\bin\\ffmpeg.exe')
+# output images for LaTex
 matplotlib.use("pgf")
 matplotlib.rcParams.update({
     "pgf.texsystem": "pdflatex",
@@ -19,8 +23,16 @@ matplotlib.rcParams.update({
     'text.usetex': True,
     'pgf.rcfonts': False,
 })
+# set style
+sns.set()
 
 # %% VARIABLES
+# Pixel to distance conversions
+# 26 px = .045 in = 1.143 mm
+# 1px = 0.04396153846153846 mm = 4.396153846153846 * 10^(-5) m
+#
+# LaTex \textwidth = 472.03123 pt. Useful for figure sizing
+
 DATASET = ('Globular', 'Spray')
 N_AUGMENT = 5
 
