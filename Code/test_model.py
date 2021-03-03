@@ -14,26 +14,20 @@ from utils import losses
 from utils.misc import chunks, set_size
 from utils.preprocessing import normalizeuint8
 
+# video settings
+matplotlib.rcParams['animation.ffmpeg_path'] = os.path.abspath(
+    'C:\\ffmpeg\\bin\\ffmpeg.exe')
+# output images for LaTex
+# matplotlib.use("pgf")
+# matplotlib.rcParams.update({
+#     "pgf.texsystem": "pdflatex",
+#     'font.family': 'serif',
+#     'text.usetex': True,
+#     'pgf.rcfonts': False,
+# })
+# set style
 sns.set()
-# \textwidth = 6.53278 in - 472.03123 pt
-# FONTSIZE = 20
-# # controls default text sizes
-# plt.rc('font', size=FONTSIZE)
-# plt.rc('axes', titlesize=FONTSIZE)     # FONTSIZE of the axes title
-# # FONTSIZE of the x and y labels
-# plt.rc('axes', labelsize=FONTSIZE)
-# plt.rc('xtick', labelsize=FONTSIZE)    # FONTSIZE of the tick labels
-# plt.rc('ytick', labelsize=FONTSIZE)    # FONTSIZE of the tick labels
-# plt.rc('legend', fontsize=FONTSIZE)    # legend FONTSIZE
-# plt.rc('figure', titlesize=FONTSIZE)  # FONTSIZE of the figure title
 
-matplotlib.use("pgf")
-matplotlib.rcParams.update({
-    "pgf.texsystem": "pdflatex",
-    'font.family': 'serif',
-    'text.usetex': True,
-    'pgf.rcfonts': False,
-})
 gpus = tf.config.experimental.list_physical_devices('GPU')
 if gpus:
     try:
@@ -42,6 +36,11 @@ if gpus:
     except RuntimeError as error:
         print(error)
 # %% VARIABLES
+# Pixel to distance conversions
+# 26 px = .045 in = 1.143 mm
+# 1px = 0.04396153846153846 mm = 4.396153846153846 * 10^(-5) m
+#
+# LaTex \textwidth = 472.03123 pt. Useful for figure sizing
 
 ARCHITECTURE_NAME = 'unet'
 DATASET = 'Spray'
@@ -73,7 +72,7 @@ def test_model():
         opt = tf.optimizers.Adam(params['learning_rate'])
 
     if params['loss_name'] == 'iou':
-        loss_fn = losses.iou_coef
+        loss_fn = losses.jaccard_distance_loss
 
     model.compile(
         optimizer=opt, loss=loss_fn)
@@ -130,22 +129,33 @@ def plot_preds():
 
 
 def plot_loss_samples():
+    '''
+    DOC
+    '''
     with open(os.path.join(MODEL_DIR, 'test_loss_dict'), 'rb') as file_pi:
         data = pickle.load(file_pi)
     test_loss = data['test_loss']
     fig, axes = plt.subplots(1, 1, figsize=set_size(
         472.03123, 0.5, aspect_ratio=0.9))
-    out = axes.hist(test_loss)
-    bins = out[1]
-    samples = [np.random.choice(
-        np.where((bins[i] <= test_loss) & (test_loss < bins[i+1]))[0]) for i in range(len(bins)-1)]
+    hist, bins, patches = axes.hist(test_loss, log=True)
+    for rectangle in patches:
+        rectangle.set_y(0.1)
+        rectangle.set_height(rectangle.get_height() - 0.1)
+    samples = []
+    for i in range(len(bins)-1):
+        try:
+            samples.append(np.random.choice(np.where((bins[i] <= test_loss) & (
+                test_loss <= bins[i+1]))[0]))
+        except ValueError:
+            continue
     axes.set_xlabel('Test loss')
     axes.set_ylabel('Frequency')
     fig.tight_layout()
     os.makedirs(os.path.join('Output', 'Plots',
                              f'{DATASET.lower()}_test_loss'), exist_ok=True)
-    fig.savefig(os.path.join('Output', 'Plots',
-                             f'{DATASET.lower()}_test_loss', f'{DATASET.lower()}_test_loss.pgf'), bbox_inches='tight')
+    plt.show()
+    # fig.savefig(os.path.join('Output', 'Plots',
+    #                          f'{DATASET.lower()}_test_loss', f'{DATASET.lower()}_test_loss.pgf'), bbox_inches='tight')
     data_img = np.load(os.path.join(
         'Data', 'Image', 'Input', f'{DATASET.lower()}_rgb.npz'))
 
