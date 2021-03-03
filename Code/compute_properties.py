@@ -49,8 +49,8 @@ def compute_properties(img):
 
                 centroids.append((c_x, c_y))
 
-                area.append(mmt['m00'])
-                perimeter.append(cv2.arcLength(cnt, True))
+                area.append(mmt['m00']*PX_TO_MM**2)
+                perimeter.append(cv2.arcLength(cnt, True)*PX_TO_MM)
             except ZeroDivisionError:
                 continue
     return centroids, area, perimeter
