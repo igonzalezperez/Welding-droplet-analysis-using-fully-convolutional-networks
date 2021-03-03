@@ -8,11 +8,16 @@ import numpy as np
 import tensorflow as tf
 import matplotlib
 import matplotlib.pyplot as plt
+import seaborn as sns
 from sklearn.model_selection import train_test_split, KFold
 from progressbar import progressbar as progress
 from architectures import UNET, DECONVNET, MULTIRES
 from utils.misc import set_size
 
+# video settings
+matplotlib.rcParams['animation.ffmpeg_path'] = os.path.abspath(
+    'C:\\ffmpeg\\bin\\ffmpeg.exe')
+# output images for LaTex
 matplotlib.use("pgf")
 matplotlib.rcParams.update({
     "pgf.texsystem": "pdflatex",
@@ -20,6 +25,8 @@ matplotlib.rcParams.update({
     'text.usetex': True,
     'pgf.rcfonts': False,
 })
+# set style
+sns.set()
 
 gpus = tf.config.experimental.list_physical_devices('GPU')
 if gpus:
@@ -29,6 +36,12 @@ if gpus:
     except RuntimeError as error:
         print(error)
 # %% VARIABLES
+# Pixel to distance conversions
+# 26 px = .045 in = 1.143 mm
+# 1px = 0.04396153846153846 mm = 4.396153846153846 * 10^(-5) m
+#
+# LaTex \textwidth = 472.03123 pt. Useful for figure sizing
+
 EPOCHS = 200
 LOSS_NAME = 'iou'
 BATCH_SIZE = 8
