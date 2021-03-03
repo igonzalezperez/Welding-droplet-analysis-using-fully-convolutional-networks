@@ -18,13 +18,13 @@ from utils.preprocessing import normalizeuint8
 matplotlib.rcParams['animation.ffmpeg_path'] = os.path.abspath(
     'C:\\ffmpeg\\bin\\ffmpeg.exe')
 # output images for LaTex
-# matplotlib.use("pgf")
-# matplotlib.rcParams.update({
-#     "pgf.texsystem": "pdflatex",
-#     'font.family': 'serif',
-#     'text.usetex': True,
-#     'pgf.rcfonts': False,
-# })
+matplotlib.use("pgf")
+matplotlib.rcParams.update({
+    "pgf.texsystem": "pdflatex",
+    'font.family': 'serif',
+    'text.usetex': True,
+    'pgf.rcfonts': False,
+})
 # set style
 sns.set()
 
@@ -137,7 +137,7 @@ def plot_loss_samples():
     test_loss = data['test_loss']
     fig, axes = plt.subplots(1, 1, figsize=set_size(
         472.03123, 0.5, aspect_ratio=0.9))
-    hist, bins, patches = axes.hist(test_loss, log=True)
+    _, bins, patches = axes.hist(test_loss, log=True)
     for rectangle in patches:
         rectangle.set_y(0.1)
         rectangle.set_height(rectangle.get_height() - 0.1)
@@ -153,9 +153,8 @@ def plot_loss_samples():
     fig.tight_layout()
     os.makedirs(os.path.join('Output', 'Plots',
                              f'{DATASET.lower()}_test_loss'), exist_ok=True)
-    plt.show()
-    # fig.savefig(os.path.join('Output', 'Plots',
-    #                          f'{DATASET.lower()}_test_loss', f'{DATASET.lower()}_test_loss.pgf'), bbox_inches='tight')
+    fig.savefig(os.path.join('Output', 'Plots',
+                             f'{DATASET.lower()}_test_loss', f'{DATASET.lower()}_test_loss.pgf'), bbox_inches='tight')
     data_img = np.load(os.path.join(
         'Data', 'Image', 'Input', f'{DATASET.lower()}_rgb.npz'))
 

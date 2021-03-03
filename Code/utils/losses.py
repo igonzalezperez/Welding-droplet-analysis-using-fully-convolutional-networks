@@ -7,15 +7,6 @@ import tensorflow as tf
 # %% FUNCTIONS
 
 
-# def jaccard_distance(y_true, y_pred, smooth=100):
-#     """ Calculates mean of Jaccard distance as a loss function """
-#     intersection = tf.reduce_sum(y_true * y_pred, axis=(1,2))
-#     sum_ = tf.reduce_sum(y_true + y_pred, axis=(1,2))
-#     jac = (intersection + smooth) / (sum_ - intersection + smooth)
-#     jd =  (1 - jac) * smooth
-#     return tf.reduce_mean(jd)
-
-
 def jaccard_distance_loss(y_true, y_pred, smooth=100):
     '''
     Alternative implementation for jaccard index.
