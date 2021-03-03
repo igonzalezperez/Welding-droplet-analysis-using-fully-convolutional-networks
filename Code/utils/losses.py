@@ -7,29 +7,16 @@ import tensorflow as tf
 # %% FUNCTIONS
 
 
+# def jaccard_distance(y_true, y_pred, smooth=100):
+#     """ Calculates mean of Jaccard distance as a loss function """
+#     intersection = tf.reduce_sum(y_true * y_pred, axis=(1,2))
+#     sum_ = tf.reduce_sum(y_true + y_pred, axis=(1,2))
+#     jac = (intersection + smooth) / (sum_ - intersection + smooth)
+#     jd =  (1 - jac) * smooth
+#     return tf.reduce_mean(jd)
+
+
 def jaccard_distance_loss(y_true, y_pred, smooth=100):
-    """
-    Jaccard = (|X & Y|)/ (|X|+ |Y| - |X & Y|)
-            = sum(|A*B|)/(sum(|A|)+sum(|B|)-sum(|A*B|))
-
-    The jaccard distance loss is useful for unbalanced datasets. This has been
-    shifted so it converges on 0 and is smoothed to avoid exploding or disapearing
-    gradient.
-
-    Ref: https://en.wikipedia.org/wiki/Jaccard_index
-
-    @url: https://gist.github.com/wassname/f1452b748efcbeb4cb9b1d059dce6f96
-    @author: wassname
-    """
-    intersection = tf.keras.backend.sum(
-        tf.keras.backend.abs(y_true * y_pred), axis=-1)
-    sum_ = tf.keras.backend.sum(tf.keras.backend.abs(
-        y_true) + tf.keras.backend.abs(y_pred), axis=-1)
-    jac = (intersection + smooth) / (sum_ - intersection + smooth)
-    return (1 - jac) * smooth
-
-
-def iou_coef(y_true, y_pred, smooth=1):
     '''
     Alternative implementation for jaccard index.
     '''
@@ -37,9 +24,9 @@ def iou_coef(y_true, y_pred, smooth=1):
         tf.keras.backend.abs(y_true * y_pred), axis=[1, 2, 3])
     union = tf.keras.backend.sum(
         y_true, [1, 2, 3])+tf.keras.backend.sum(y_pred, [1, 2, 3])-intersection
-    iou = tf.keras.backend.mean(1 -
-                                (intersection + smooth) / (union + smooth), axis=0)
-    return iou
+    jaccard_distance = tf.keras.backend.mean(1 -
+                                             (intersection + smooth) / (union + smooth), axis=0)
+    return jaccard_distance
 
 
 def dice_coef_v1(y_true, y_pred, smooth=1):
