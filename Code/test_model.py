@@ -11,8 +11,9 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from progressbar import progressbar as progress
 from utils import losses
-from utils.misc import chunks, set_size
+from utils.misc import chunks
 from utils.preprocessing import normalizeuint8
+from utils.postprocessing import set_size
 
 # video settings
 matplotlib.rcParams['animation.ffmpeg_path'] = os.path.abspath(

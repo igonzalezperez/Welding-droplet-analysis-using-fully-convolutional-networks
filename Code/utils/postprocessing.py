@@ -6,6 +6,49 @@ import numpy as np
 # %% FUNCTIONS
 
 
+def set_size(width_pt=472.03123, fraction=1, aspect_ratio=0.6180339887498949, subplots=(1, 1)):
+    """Set figure dimensions to sit nicely in our document.
+
+    Parameters
+    ----------
+    width_pt: float
+            Document width in points
+    fraction: float, optional
+            Fraction of the width which you wish the figure to occupy
+    subplots: array-like, optional
+            The number of rows and columns of subplots.
+    Returns
+    -------
+    fig_dim: tuple
+            Dimensions of figure in inches
+    """
+    # Width of figure (in pts)
+    fig_width_pt = width_pt * fraction
+    # Convert from pt to inches
+    inches_per_pt = 1 / 72.27
+
+    # Figure width in inches
+    fig_width_in = fig_width_pt * inches_per_pt
+    # Figure height in inches
+    fig_height_in = fig_width_in * aspect_ratio * (subplots[0] / subplots[1])
+
+    return (fig_width_in, fig_height_in)
+
+
+def latex_plot_config():
+    '''
+    Config. to output images for LaTex.
+    '''
+    import matplotlib
+    matplotlib.use("pgf")
+    matplotlib.rcParams.update({
+        "pgf.texsystem": "pdflatex",
+        'font.family': 'serif',
+        'text.usetex': True,
+        'pgf.rcfonts': False,
+    })
+
+
 def parse_centroid_coords(centroids):
     '''
     Receives list of tuples [(x1, y1), (x2, y2), ...] and returns x and y in separate lists > ([x1, x2, ...],[y1, y2, ...])

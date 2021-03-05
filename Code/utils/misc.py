@@ -40,35 +40,6 @@ def upper_round(div: int, num: int) -> int:
     return upper
 
 
-def set_size(width_pt, fraction=1, aspect_ratio=0.6180339887498949, subplots=(1, 1)):
-    """Set figure dimensions to sit nicely in our document.
-
-    Parameters
-    ----------
-    width_pt: float
-            Document width in points
-    fraction: float, optional
-            Fraction of the width which you wish the figure to occupy
-    subplots: array-like, optional
-            The number of rows and columns of subplots.
-    Returns
-    -------
-    fig_dim: tuple
-            Dimensions of figure in inches
-    """
-    # Width of figure (in pts)
-    fig_width_pt = width_pt * fraction
-    # Convert from pt to inches
-    inches_per_pt = 1 / 72.27
-
-    # Figure width in inches
-    fig_width_in = fig_width_pt * inches_per_pt
-    # Figure height in inches
-    fig_height_in = fig_width_in * aspect_ratio * (subplots[0] / subplots[1])
-
-    return (fig_width_in, fig_height_in)
-
-
 # %%MAIN
 if __name__ == '__main__':
     pass

@@ -12,7 +12,7 @@ import seaborn as sns
 from sklearn.model_selection import train_test_split, KFold
 from progressbar import progressbar as progress
 from architectures import UNET, DECONVNET, MULTIRES
-from utils.misc import set_size
+from utils.postprocessing import set_size
 
 # video settings
 matplotlib.rcParams['animation.ffmpeg_path'] = os.path.abspath(
