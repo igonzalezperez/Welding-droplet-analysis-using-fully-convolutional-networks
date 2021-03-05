@@ -1,0 +1,68 @@
+\begin{tikzpicture}
+\tikzstyle{connection}=[ultra thick,every node/.style={sloped,allow upside down},draw=\edgecolor,opacity=0.7]
+\tikzstyle{copyconnection}=[ultra thick,every node/.style={sloped,allow upside down},draw={rgb:blue,4;red,1;green,1;black,3},opacity=0.7]
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Draw Encoder
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% conv1_1,conv1_2
+\pic[shift={(0,0,0)}] at (0,0,0) {RightBandedBox={name=cr1,%
+        xlabel={{"64","64"}},ylabel=$3\times3$,zlabel=I,fill=\ConvColor,bandfill=\ConvReluColor,%
+        height=40,width={2,2},depth=40}};
+%pool1
+\pic[shift={(0,0,0)}] at (cr1-east) {Box={name=p1,%
+        fill=\PoolColor,opacity=0.5,height=32,width=1,depth=32,ylabel=$2\times2$}};
+%%%%%%%%%%
+% conv2_1,conv2_2
+\pic[shift={(1,0,0)}] at (p1-east) {RightBandedBox={name=cr2,%
+        xlabel={{"128","128"}},ylabel=$3\times3$,zlabel=I/2,fill=\ConvColor,bandfill=\ConvReluColor,%
+        height=32,width={3.5,3.5},depth=32}};
+%pool2
+\pic[shift={(0,0,0)}] at (cr2-east) {Box={name=p2,%
+        fill=\PoolColor,opacity=0.5,height=25,width=1,depth=25,ylabel=$2\times2$}};
+%%%%%%%%%%
+% conv3_1,conv3_2
+\pic[shift={(0.75,0,0)}] at (p2-east) {RightBandedBox={name=cr3,%
+        xlabel={{"256","256","256"}},ylabel=$3\times3$,zlabel=I/4,fill=\ConvColor,bandfill=\ConvReluColor,%
+        height=25,width={4.5,4.5,4.5},depth=25}};
+%pool3
+\pic[shift={(0,0,0)}] at (cr3-east) {Box={name=p3,%
+        fill=\PoolColor,opacity=0.5,height=16,width=1,depth=16,ylabel=$2\times2$}};
+%%%%%%%%%%
+% conv4_1,conv4_2,conv4_3
+\pic[shift={(0.5,0,0)}] at (p3-east) {RightBandedBox={name=cr4,%
+        xlabel={{"512","512","512"}},ylabel=$3\times3$,zlabel=I/8,fill=\ConvColor,bandfill=\ConvReluColor,%
+        height=16,width={6,6,6},depth=16}};
+%pool4
+\pic[shift={(0,0,0)}] at (cr4-east) {Box={name=p4,%
+        fill=\PoolColor,opacity=0.5,height=8,width=1,depth=8,ylabel=$2\times2$}};
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Bottleneck
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% conv5_1,conv5_2,conv5_3
+\pic[shift={(0.75,0,0)}] at (p4-east) {RightBandedBox={name=cr5,%
+        xlabel={{"512","512","512"}},ylabel=$3\times3$,zlabel=I/16,fill=\ConvColor,bandfill=\ConvReluColor,%
+        height=8,width={6,6,6},depth=8}};
+
+%pool5
+\pic[shift={(0,0,0)}] at (cr5-east) {Box={name=p5,%
+        fill=\PoolColor,opacity=0.5,height=5,width=.7,depth=5,ylabel=$7\times7$}};
+        
+\pic[shift={(1,0,0)}] at (cr5-east) {RightBandedBox={name=fc,%
+        xlabel={{"4096","4096"}},zlabel=I/32,fill=\ConvColor,bandfill=\ConvReluColor,%
+        height=2,width={12,12},depth=2}};
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Draw Decoder 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Draw connections
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\draw [connection]  (p1-east)    -- node {\midarrow} (cr2-west);
+\draw [connection]  (p2-east)    -- node {\midarrow} (cr3-west);
+\draw [connection]  (p3-east)    -- node {\midarrow} (cr4-west);
+\draw [connection]  (p4-east)    -- node {\midarrow} (cr5-west);
+\draw [connection]  (p5-east)    -- node {\midarrow} (fc-west);
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{tikzpicture}

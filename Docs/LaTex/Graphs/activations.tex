@@ -1,0 +1,35 @@
+\begin{tikzpicture}[domain=-2.9:2.9]
+        % grid
+        \draw[very thin,color=gray] (-2.9, -1.1) grid (2.9, 2.9);
+        \foreach \x in {-2,-1,0,1,2}
+            \node[anchor=north] at (\x,-1.1) {\x};
+        \foreach \y in {-1,0,1,2}
+            \node[anchor=east] at (-2.9,\y) {\y};
+        % axes
+        \draw[->,thick] (-2.9, 0) -- (3.1, 0) node[right] {$x$};
+        \draw[->,thick] (0, -1.1) -- (0, 3.1) node[above] {$f(x)$};
+
+        % Logistic
+        \draw[thick, color=blue]
+            plot (\x, { 1/(1+exp(-1 * \x)) })
+            node[right,yshift=-0.5em] {$\sigma(x)$};
+        % Beta logistic
+        %\draw[color=purple] plot (\x, { 1/(1+exp(-.5 * \x)) })
+        %    node[right] {$logistic(a), beta=.5$};
+        % Tanh
+        \draw[thick, color=orange]
+            plot (\x, { ( 1 - exp(-2*\x) ) / ( 1 + exp(-2*\x) ) })
+            node[right,yshift=0.5em] {$tanh(x)$};
+        
+        % Leaky ReLU
+        \draw[thick, color=black!70]
+            plot (\x, { max(0.08 * \x, \x) })
+            node[xshift=-19.3em,yshift=-8em] (a) {$Leaky ReLU(x)$};
+            
+        % ReLU
+        \draw[thick, color=red]
+            plot (\x, { max(0, \x) })
+            %node[right] {$ReLU(x)$};
+            node[below = -1.2em of a.east, anchor=east] {$ReLU(x)$};
+            
+    \end{tikzpicture}

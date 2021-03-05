@@ -123,9 +123,16 @@ GitHub.sublime-settings
 ## copied and pasted from https://djangowaves.com/tips-tricks/gitignore-for-a-django-project/
 # Local Folders #
 Data
-Docs
+Docs/CINE docs
+Docs/FURCA
+Docs/Papers
+Docs/Propuesta Tesis
+Docs/conversion_table.png
 Code/post_grid_search.py
 Output/Saved Models/Checkpoints
 Output/Predictions
 Output/Videos/area_spray
 Output/Videos/area_mask_spray
+Docs/LaTex/borrador_tesis_1.1.pdf
+Docs/LaTex/borrador_tesis_1.pdf
+Docs/LaTex/borrador_tesis_2.pdf

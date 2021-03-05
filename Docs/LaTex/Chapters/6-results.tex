@@ -1,0 +1,215 @@
+\chapter{Results and analysis}
+In this chapter, the results are shown and discussed covering the model selection process, training, testing and post processing. It is worth mentioning that since this thesis is focused on analyzing videos, there is a great value in having video results as well but because of the format, only sampled images can be shown. Nevertheless, in the Github project\footnote{\url{https://github.com/igonzalezperez/Welding-droplet-analysis-using-fully-convolutional-networks}.} are all the video results which generate the images shown in this chapter.
+
+\section{Grid search}
+The three proposed architectures' hyperparameters are optimized through grid search (see table \ref{table:grid_search}). Also, 4-fold cross validation is performed so that every model is run over four different and disjoint combinations of training and validation set. Therefore, every model yields four training loss and validation loss values which can then be averaged and used to compare between models. 
+
+In tables \ref{table:globular_best_models} and \ref{table:spray_best_models} the three best models for each proposed architecture are shown for globular and spray transfer respectively\footnote{All of the results of the grid search are shown in Appendix \ref{appendix_gs}}. The results show that the best model is the U-Net in every case, while the MultiResUnet has the lowest performance and the DeconvNet is between the other two, closer to the MultiResUnet. Hence the U-Net architecture seems suitable to solve the task at hand. 
+
+The low performance of the MultiResUnet can be explained by the fact that it is considerably more complex than the alternatives and the problem of droplet detection is relatively simple if compared to other computer vision tasks such as traffic image segmentation in which a wide variety of subjects (geometry, color, scale, etc.) can be found. Moreover, in table \ref{table:globular_best_models} the first two MultiResUnet models have a low number of epochs, especially considering that the patience is of 20 epochs when applying the early stopping criteria. Then, a higher patience could improve those results but this is not clear since the third best model does have higher number of epochs and performs similarly. Furthermore, the better performance of U-Net over DeconvNet is to be expected, since the U-Net incorporates skip layers while DeconvNet is a vanilla FCN.
+
+Also, notice that the standard deviation is always one order of magnitude below the average, which means the individual results do not differ significantly. Hence, the models are robust since they perform similarly across different of validation data.
+
+\input{Tables/best_models_table}
+
+\section{Training}
+
+After the grid search, the best models are selected based on the average validation loss and then these models are saved to make predictions. In figures \ref{fig:globular_loss_curve} and \ref{fig:spray_loss_curve} the learning curves for the globular and spray models are shown respectively. These graphs show that the training is indeed successful, steadily reaching a low loss value both in training and validation. The gap between the two is to be expected and the fact that the two curves show similar behavior as opposed to having the validation go up while training loss goes down suggests that there is no significant overfitting in neither of both cases.
+
+Additionally, validation loss is monitored through the training process so that only parameters in which that metric improves are saved. Then, the best model is saved rather than the model at the end of training. In practical terms, since the early stopping has a patience of 20, when the training is done, the last model saved is 20 epochs prior to the last one which corresponds to the model with the lowest validation loss in the whole curve as seen in the dashed vertical lines in figures \ref{fig:globular_loss_curve} and \ref{fig:spray_loss_curve}.
+
+\begin{figure}
+  \begin{subfigure}[b]{\textwidth}
+    \input{Images/Results/globular_train_loss_curve.pgf}
+    \caption[Globular learning curve]{Globular}
+    \label{fig:globular_loss_curve}
+  \end{subfigure}
+\vfill
+  \begin{subfigure}[b]{\textwidth}
+    \input{Images/Results/spray_train_loss_curve.pgf}
+    \caption[Spray learning curve]{Spray}
+    \label{fig:spray_loss_curve}
+  \end{subfigure}
+  \caption[]{(a) Globular learning curve using the best model according to table \ref{table:globular_best_models}. U-Net model with 16 batch size, 32 filters, $0.001$ learning rate, Adam optimizer, Jaccard distance loss and early stopping of 200 epochs with patience 20 stopping at 53 epochs. Training loss: $0.12$, validation loss: $0.17$. (b) Spray learning curve using the best model according to table \ref{table:spray_best_models}. U-Net model with 8 batch size, 8 filters, $0.005$ learning rate, Adam optimizer, Jaccard distance loss and early stopping of 200 epochs with patience 20 stopping at 49 epochs. Training loss: $0.25$, validation loss: $0.27$.} 
+\end{figure}
+
+\clearpage
+\section{Testing}
+
+The best models obtained via grid search are trained and then used to make predictions over all of the image data, that is new masks are generated by the model. The globular model reaches a test loss of $0.02$ and in spray the test loss is of $0.01$. These results are low compared to those obtained in the training phase which can be explained by a couple of factors: First, when training, dropout is applied to prevent overfitting but, when testing, dropout is not necessary since the network has already been trained and the weights are fixed. Therefore, the network is more powerful when testing which can yield lower loss values in comparison. Second, a lower test loss can be explained by the fact that the training examples where chosen to have a high variance in them so the network can learn the more complex patterns which can appear in the process. Then, the testing set has a majority of examples that are rather simple compared to training examples which consequently reduces the loss value. 
+\begin{figure}
+  \begin{subfigure}[b]{0.5\textwidth}
+    \input{Images/Results/globular_test_loss/globular_test_loss.pgf}
+    \caption{Globular}
+    \label{fig:globular_test_loss}
+  \end{subfigure}
+\hfill
+  \begin{subfigure}[b]{0.5\textwidth}
+    \input{Images/Results/spray_test_loss/spray_test_loss.pgf}
+    \caption{Spray}
+    \label{fig:spray_test_loss}
+  \end{subfigure}
+  \caption[Log histogram of the test loss obtained for every example]{Log histogram of the test loss obtained for every example in globular (a) and spray (b) transfer mode.}
+  \label{fig:test_loss_hist}
+\end{figure}
+
+In figures \ref{fig:globular_test_loss} and \ref{fig:spray_test_loss} a histogram of the obtained loss for every example in the test set is shown for each transfer mode. As stated before, an overwhelming majority of examples have a small loss value and a small amount are on the higher end in both cases. A different pattern appears in globular and spray, to better understand this behavior, examples of input and mask are sampled from some of the bins in each histogram, shown in figures \ref{fig:globular_loss_samples} and \ref{fig:spray_loss_samples}. In the globular case, most of the images are similar to figure \ref{fig:globular_loss_samples_a} reaching a low loss value and having a noticeably accurate segmentation. In the other examples in which the loss is higher, the network does not output a segmentation mapping and predicts zero for most of the pixels. This is because of the nature of the process of globular transfer, since all of those frames occur when a droplet has been released and submerged in the welding pool, and a new droplet is being formed. At this point when the droplet is just beginning to form, the network does not recognize a droplet in the frame, which can be useful since the droplet frequency can be inferred from this behavior.
+
+\begin{figure}
+  \begin{subfigure}[b]{0.45\textwidth}
+    \import{Images/Results/globular_test_loss/1/}{globular_test_loss_1.pgf}
+    \caption{}
+    \label{fig:globular_loss_samples_a}
+  \end{subfigure}
+\hfill
+  \begin{subfigure}[b]{0.45\textwidth}
+    \import{Images/Results/globular_test_loss/2/}{globular_test_loss_2.pgf}
+    \caption{}
+  \end{subfigure}
+ \vfill
+  \begin{subfigure}[b]{0.45\textwidth}
+    \import{Images/Results/globular_test_loss/3/}{globular_test_loss_7.pgf}
+    \caption{}
+  \end{subfigure}
+\hfill
+  \begin{subfigure}[b]{0.45\textwidth}
+    \import{Images/Results/globular_test_loss/4/}{globular_test_loss_10.pgf}
+    \caption{}
+  \end{subfigure}
+  \caption[Samples of different loss values in testing examples for globular transfer mode]{Samples of different loss values in testing examples for globular transfer mode.}
+  \label{fig:globular_loss_samples}
+\end{figure}
+
+On the other hand, figure \ref{fig:spray_loss_samples} shows that most of the loss values in spray transfer are low even on the higher end of the histogram. Nevertheless, figure \ref{fig:spray_loss_samples_d} is from the worse performing examples and clearly the mapping is not accurate, this may be because the geometry is significantly different from the other examples, making it harder to predict. The fact that most of the examples in spray transfer have a similar loss while in globular transfer there is a wider gap happens due to the fact that the droplet's process in spray transfer is not separated by frames, that is, in most (if not all) frames there are multiple droplets in the image, so the process of formation, detachment and landing of the droplet into the welding pool cannot be separated in a frame by frame basis.
+
+\begin{figure}
+  \begin{subfigure}[b]{0.45\textwidth}
+    \import{Images/Results/spray_test_loss/1/}{spray_test_loss_1.pgf}
+    \caption{}
+  \end{subfigure}
+\hfill
+  \begin{subfigure}[b]{0.45\textwidth}
+    \import{Images/Results/spray_test_loss/2/}{spray_test_loss_2.pgf}
+    \caption{}
+  \end{subfigure}
+ \vfill
+  \begin{subfigure}[b]{0.45\textwidth}
+    \import{Images/Results/spray_test_loss/3/}{spray_test_loss_7.pgf}
+    \caption{}
+  \end{subfigure}
+\hfill
+  \begin{subfigure}[b]{0.45\textwidth}
+    \import{Images/Results/spray_test_loss/4/}{spray_test_loss_10.pgf}
+    \caption{}
+    \label{fig:spray_loss_samples_d}
+  \end{subfigure}
+  \caption[Samples of different loss values in testing examples for spray transfer mode]{Samples of different loss values in testing examples for spray transfer mode.}
+  \label{fig:spray_loss_samples}
+\end{figure}
+
+The previous results are to show some of the possible outliers with bad results. However, the majority of segmentation mappings are accurate both qualitatively since they look like they separate the droplet and quantitatively since the loss is small. In figures \ref{fig:glob_pred_samples} and \ref{fig:spray_pred_samples} some randomly sampled predictions are shown.
+
+\begin{figure}
+\centering
+  \begin{subfigure}[b]{0.45\textwidth}
+    \includegraphics[width=\linewidth]{Images/Results/glob_pred_0.jpg}
+    \caption{}
+
+  \end{subfigure}
+\hfill
+  \begin{subfigure}[b]{0.45\textwidth}
+    \includegraphics[width=\linewidth]{Images/Results/glob_pred_3870.jpg}
+    \caption{}
+
+  \end{subfigure}
+  \begin{subfigure}[b]{0.45\textwidth}
+    \includegraphics[width=\linewidth]{Images/Results/glob_pred_4817.jpg}
+    \caption{}
+
+  \end{subfigure}
+    \caption[Globular transfer mode predictions]{Globular transfer mode predictions.}
+    \label{fig:glob_pred_samples}
+\end{figure}
+
+\begin{figure}
+\centering
+  \begin{subfigure}[b]{0.45\textwidth}
+    \includegraphics[width=\linewidth]{Images/Results/spray_pred_15.jpg}
+    \caption{}
+
+  \end{subfigure}
+\hfill
+  \begin{subfigure}[b]{0.45\textwidth}
+    \includegraphics[width=\linewidth]{Images/Results/spray_pred_1937.jpg}
+    \caption{}
+
+  \end{subfigure}
+  \begin{subfigure}[b]{0.45\textwidth}
+    \includegraphics[width=\linewidth]{Images/Results/spray_pred_3269.jpg}
+    \caption{}
+
+  \end{subfigure}
+    \caption[Spray transfer mode predictions]{Spray transfer mode predictions.}
+    \label{fig:spray_pred_samples}
+\end{figure}
+
+Moreover, an important aspect of this work is that the labels were manually generated, so the results are subject to a human bias, specifically the selection of the boundary of the droplet because at a pixel level there is not an exact distinction between droplet and background and a gradient is seen between the brighter pixels of the droplet and the darker pixels of the background. Hence, to make more evident where the network decides to make  the droplet-background division which is influenced by the labeling, figures \ref{fig:boundary_globular} and \ref{fig:boundary_spray} show the pixel values of a single horizontal strip, specifically the one that goes through the centroid of the droplet segmentation. There, one can see that there is a transition between droplet and background, and vertical lines show where the model cuts and makes the segmentation. The figures show that in the image there there is a steep transition between background and droplet, and the segmentation cuts around the middle of that transition.
+
+
+\begin{figure}
+    \centering
+    \import{Images/Results/boundary_globular/}{500.pgf}
+    \caption[Boundary predicted by the model with respect to original globular image]{Boundary predicted by the model with respect to original globular image. A horizontal strip is taken along the droplet's centroid (dashed yellow line in (a) and (b)) and the pixel values along that line are shown in (c). In (b) the predicted mask which generates the red curve in (c) is shown.}
+    \label{fig:boundary_globular}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \import{Images/Results/boundary_spray/}{500.pgf}
+    \caption[Boundary predicted by the model with respect to original spray image]{Boundary predicted by the model with respect to original spray image.}
+    \label{fig:boundary_spray}
+\end{figure}
+
+
+\clearpage
+\section{Post processing}
+
+\begin{figure}
+\centering
+  \begin{subfigure}[b]{0.45\textwidth}
+    \import{Images/Results/centroid_samples/}{globular_0.pgf}
+    \caption{}
+
+  \end{subfigure}
+\hfill
+  \begin{subfigure}[b]{0.45\textwidth}
+    \import{Images/Results/centroid_samples/}{globular_790.pgf}
+    \caption{}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.45\textwidth}
+    \import{Images/Results/centroid_samples/}{globular_2360.pgf}
+    \caption{}
+  \end{subfigure}
+    \caption[Spray transfer mode predictions]{Spray transfer mode predictions.}
+    \label{fig:globular_centroids}
+\end{figure}
+
+\begin{figure}
+\centering
+  \begin{subfigure}[b]{0.45\textwidth}
+    \import{Images/Results/centroid_samples/}{spray_0.pgf}
+    \caption{}
+
+  \end{subfigure}
+\hfill
+  \begin{subfigure}[b]{0.45\textwidth}
+    \import{Images/Results/centroid_samples/}{spray_42.pgf}
+    \caption{}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.45\textwidth}
+    \import{Images/Results/centroid_samples/}{spray_656.pgf}
+    \caption{}
+  \end{subfigure}
+    \caption[Spray transfer mode predictions]{Spray transfer mode predictions.}
+    \label{fig:spray_centroids}
+\end{figure}

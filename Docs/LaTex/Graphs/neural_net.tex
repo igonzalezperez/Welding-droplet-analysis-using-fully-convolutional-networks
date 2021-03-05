@@ -1,0 +1,65 @@
+\def\layersep{3cm}
+
+\begin{tikzpicture}[shorten >=1pt,->,draw=black!50, node distance=\layersep]
+    \tikzstyle{every pin edge}=[<-,shorten <=1pt]
+    \tikzstyle{neuron}=[circle,draw=black,minimum size=20pt,inner sep=0pt, line width=.4pt]
+    \tikzstyle{input neuron}=[neuron, fill=green!20];
+    \tikzstyle{bias neuron}=[neuron, fill=gray!20];
+    \tikzstyle{output neuron}=[neuron, fill=red!20];
+    \tikzstyle{hidden neuron}=[neuron, fill=blue!20];
+    \tikzstyle{annot} = [text width=4em, text centered]
+
+    % Draw the input layer nodes
+    \foreach[count=\i from 0] \name / \y in {4,3, 0}
+    % This is the same as writing \foreach \name / \y in {1/1,2/2,3/3,4/4}
+        \ifthenelse{\i=0}{  \node[bias neuron, pin=left:$x_\i$] (I-\name) at (0,-\y-.5) {}}{ \ifthenelse{\i=2}{  \node[input neuron, pin=left:$x_D$] (I-\name) at (0,-\y-.5) {}}{  \node[input neuron, pin=left:$x_\i$] (I-\name) at (0,-\y-.5) {}}}
+          ;
+
+    % Draw the hidden layer nodes
+    \foreach[count=\i from 0] \name / \y in {5,4,1}
+        \ifthenelse{\i=0}{ \path[yshift=0.5cm]
+            node[bias neuron] (H-\name) at (\layersep,-\y cm) {}}{\ifthenelse{\i=2}{ \path[yshift=0.5cm]
+            node[hidden neuron] (H-\name) at (\layersep,-\y cm) {}}{ \path[yshift=0.5cm]
+            node[hidden neuron] (H-\name) at (\layersep,-\y cm) {}}}
+       ;
+    
+    % Draw the output layer nodes
+    \foreach[count=\i from 1] \name / \y in {4,1}
+        \ifthenelse{\i=2}{\path[yshift=0.5cm]
+        node[output neuron] (O-\name) at (2*\layersep,-\y cm) {}}{\path[yshift=0.5cm]
+        node[output neuron] (O-\name) at (2*\layersep,-\y cm) {}};
+        
+    % Connect every node in the input layer with every node in the
+    % hidden layer.
+    \foreach[count=\i from 0] \source in {4,3,0}
+        \foreach[count=\j from 0] \dest in {5,4,1}
+        \ifthenelse{\i=0 \AND \j=0 \OR \j=0}{}{\path (I-\source) edge (H-\dest)};
+
+        % Connect every node in the hidden layer with the output layer
+    \foreach \source in {5,4,1}
+        \foreach \dest in {4,1}
+        \path (H-\source) edge (O-\dest);
+    % Annotate the layers
+    \node[annot] at (\layersep, 1) {Hidden layer};
+    \node[annot] at (0,1) {Input layer};
+    \node[annot] at (2*\layersep, 1) {Output layer};
+    
+    \node[annot] at (0.8*\layersep,-0.1) {$z_M$};
+    \node[annot] at (0.8*\layersep,-3.2) {$z_1$};
+    \node[annot] at (0.8*\layersep,-4.6) {$z_0$};
+    
+    \node[annot] at (2.2*\layersep,-0.1) {$y_K$};
+    \node[annot] at (2.2*\layersep,-3.2) {$y_1$};
+    
+    \node[annot] at (0.5*\layersep,0) {$w^{(1)}_{MD}$};
+    \node[annot] at (1.5*\layersep,0) {$w^{(2)}_{KM}$};
+    \node[annot] at (1.5*\layersep,-4.3) {$w^{(2)}_{10}$};
+    
+    
+    \foreach \i in {-1,-1.4,-1.8,-2.2,-2.6,-3}
+        \node[circle,draw=black,minimum size=2pt,inner sep=0pt, fill=black!50] at (0,\i) {};
+    \foreach \i in {-1,-1.4,-1.8,-2.2,-2.6,-3}
+        \node[circle,draw=black,minimum size=2pt,inner sep=0pt, fill=black!50] at (\layersep,\i) {};
+    \foreach \i in {-1,-1.4,-1.8,-2.2,-2.6,-3}
+        \node[circle,draw=black,minimum size=2pt,inner sep=0pt, fill=black!50] at (2*\layersep,\i) {};
+\end{tikzpicture}

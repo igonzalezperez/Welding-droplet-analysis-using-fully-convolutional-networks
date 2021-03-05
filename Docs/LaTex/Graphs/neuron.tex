@@ -1,0 +1,45 @@
+\def\layersep{3cm}
+\def\maxheight{2.1}
+\def\dotoffset{1.55}
+\def\hoffset{0}
+\newcommand*{\Scale}[2][4]{\scalebox{#1}{$#2$}}%
+\begin{tikzpicture}[shorten >=1pt,->,draw=black!50, node distance=\layersep]
+    \tikzstyle{every pin edge}=[<-,shorten <=1pt]
+    \tikzstyle{neuron}=[circle,draw=black,minimum size=20pt,inner sep=0pt, line width=.4pt]
+    \tikzstyle{input neuron}=[neuron, fill=blue!20];
+    \tikzstyle{bias neuron}=[neuron, fill=gray!20];
+    \tikzstyle{output neuron}=[neuron, fill=red!20];
+    \tikzstyle{hidden neuron}=[circle split,draw=black,minimum size=40pt,inner sep=0pt, line width=.4pt]
+    \tikzstyle{annot} = [text width=4em, text centered]
+
+    % Draw the input layer nodes
+    \foreach[count=\i from 0] \name / \y in {4,3, 0}
+    % This is the same as writing \foreach \name / \y in {1/1,2/2,3/3,4/4}
+        \ifthenelse{\i=0}{  \node[bias neuron] (I-\name) at (\hoffset,-\y+\maxheight) {$z^{(l)}_\i$}}{ \ifthenelse{\i=2}{  \node[input neuron] (I-\name) at (\hoffset,-\y+\maxheight) {$z^{(l)}_M$}}{  \node[input neuron] (I-\name) at (\hoffset,-\y+\maxheight) {$z^{(l)}_\i$}}}
+          ;
+    
+    \node[annot] at (1+\hoffset, 2) {$w^{(l)}_{nM}$};
+    \node[annot] at (\hoffset+.6, -.2) {$w^{(l)}_{n1}$};
+    \node[annot] at (1+\hoffset, -1.8) {$w^{(l)}_{n0}$};
+        
+    \node[hidden neuron, rotate=90] (H-i) at (1+\hoffset+\layersep, -2+\maxheight) {\rotatebox{-90}{$\overset{M}{\underset{j=1}{\sum}}w_{nj}z^{(l)}_j$}
+     \nodepart{lower} \rotatebox{-90}{$\quad h(a_n)$}};
+     
+     \path (H-i) edge (2.2*\layersep+1+\hoffset,-2+\maxheight);
+    
+
+        
+    % Connect every node in the input layer with every node in the
+    % hidden layer.
+    \foreach \source in {4,3,0}
+        \path (I-\source) edge (H-i);
+
+    % Annotate the layers
+    \node[annot] at (1+\hoffset+\layersep, 3.3) {Layer $l+1$, Neuron $n$};
+    \node[annot] at (\hoffset,3.7) {Layer $l$};
+    \node[annot] at (1+ 1+\hoffset+ 1.8*\layersep, -1.5+\maxheight) {$z_n^{(l+1)}$};
+
+  \foreach \i in {-.1,-0.55, -1, -1.45, -1.9}
+    \node[circle,draw=black,minimum size=2pt,inner sep=0pt, fill=black!50] at (\hoffset,\i+\dotoffset) {};
+        
+\end{tikzpicture}

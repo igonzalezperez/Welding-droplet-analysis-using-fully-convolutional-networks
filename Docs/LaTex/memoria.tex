@@ -1,0 +1,86 @@
+\documentclass[upright, contnum]{Config/umemoria}
+
+%fix for the oneside argument
+\makeatletter
+\g@addto@macro\titlepage{\pagenumbering{Alph}}
+\g@addto@macro\endtitlepage{\pagenumbering{roman}}
+\makeatother
+
+\depto{Departamento de Ingeniería Mecánica}
+\author{Iván Ignacio Gonzalez Pérez}
+\title{Welding droplet segmentation using Deep Learning}
+\auspicio{}
+\date{Diciembre 2020}
+\guia{Viviana Meruane Naranjo}
+\carrera{Magíster en Ciencias de la Ingeniería, Mención Mecánica}
+\memoria{Tesis para optar al Grado de \break  Magíster en Ciencias de la Ingeniería, Mención Mecánica \break
+\break
+Memoria para optar al título de \break  Ingeniero Civil Mecánico}
+\comision{Patricio Méndez, Rubén Fernández}
+
+
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+
+\usepackage{etoolbox}% http://ctan.org/pkg/etoolbox
+\makeatletter
+% \patchcmd{<cmd>}{<search>}{<replace>}{<success>}{<failure>}
+% --- Patch \chapter
+\patchcmd{\@makechapterhead}{50\p@}{\chapheadtopskip}{}{}% Space from top of page to CHAPTER X
+\patchcmd{\@makechapterhead}{20\p@}{\chapheadsep}{}{}% Space between CHAPTER X and CHAPTER TITLE
+\patchcmd{\@makechapterhead}{40\p@}{\chapheadbelowskip}{}{}% Space between CHAPTER TITLE and text
+% --- Patch \chapter*
+\patchcmd{\@makeschapterhead}{50\p@}{\chapheadtopskip}{}{}% Space from top of page to CHAPTER TITLE
+\patchcmd{\@makeschapterhead}{40\p@}{\chapheadbelowskip}{}{}% SPace between CHAPTER TITLE and text
+\makeatother
+% Set new lengths
+\newlength{\chapheadtopskip}\setlength{\chapheadtopskip}{10pt}
+\newlength{\chapheadsep}\setlength{\chapheadsep}{20pt}
+\newlength{\chapheadbelowskip}\setlength{\chapheadbelowskip}{15pt}
+
+
+\begin{document}
+
+\frontmatter
+\maketitle
+
+\input{Chapters/01-abstract_english}
+
+\cleardoublepage
+
+\input{Chapters/02-abstract_español}
+
+%\begin{dedicatoria} % opcional
+%"Stately, plump Buck Mulligan\\came from the stairhead,\\bearing %a bowl of lather\\on which a mirror\\and a razor\\lay crossed."
+%\end{dedicatoria}
+
+%\begin{thanks} % opcional
+
+%\end{thanks}
+
+
+%\tableofcontents
+%\listoftables % opcional
+%\listoffigures % opcional
+
+\mainmatter
+
+\input{Chapters/1-intro}
+\input{Chapters/2-methodology}
+\input{Chapters/3-background}
+\input{Chapters/4-proposed_model}
+\input{Chapters/5-case_study}
+\input{Chapters/6-results}
+\input{Chapters/7-conclusion}
+
+
+
+\bibliographystyle{unsrt}
+\bibliography{Bibliography/segmentation, Bibliography/welding, Bibliography/deep_learning}
+
+\appendix
+\input{Appendix/appendix_a}
+
+\end{document}

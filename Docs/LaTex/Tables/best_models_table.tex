@@ -1,0 +1,68 @@
+\begin{table}
+\centering
+\caption[Grid search results for globular dataset]{Grid search results for globular dataset. The best three models for each architecture are shown based on the average validation loss over 4-fold cross validation.}
+\label{table:globular_best_models}
+\begin{tabular}{llllllllllll}
+ &
+   &
+   &
+   &
+  \multicolumn{4}{l}{\begin{tabular}[c]{@{}l@{}}Last\\ epoch\end{tabular}} &
+  \multicolumn{2}{l}{\begin{tabular}[c]{@{}l@{}}Train\\ loss\end{tabular}} &
+  \multicolumn{2}{l}{\begin{tabular}[c]{@{}l@{}}Val.\\ loss\end{tabular}} \\
+Architecture &
+  \begin{tabular}[c]{@{}l@{}}Batch\\ size\end{tabular} &
+  Filters &
+  \begin{tabular}[c]{@{}l@{}}Learning\\ rate\end{tabular} &
+  1 &
+  2 &
+  3 &
+  4 &
+  Mean &
+  \begin{tabular}[c]{@{}l@{}}Std.\\ dev.\end{tabular} &
+  Mean &
+  \begin{tabular}[c]{@{}l@{}}Std.\\ dev.\end{tabular} \\ \hline
+U-Net     & 16 & 32 & 0.001 & 95  & 82  & 118 & 67  & 0.1  & 0.015 & 0.19 & 0.028 \\
+U-Net     & 32 & 8  & 0.01  & 155 & 95  & 83  & 68  & 0.13 & 0.025 & 0.2  & 0.006 \\
+U-Net     & 32 & 8  & 0.001 & 93  & 106 & 82  & 85  & 0.12 & 0.007 & 0.2  & 0.02  \\
+DeconvNet & 32 & 8  & 0.001 & 151 & 52  & 75  & 89  & 0.21 & 0.065 & 0.35 & 0.029 \\
+DeconvNet & 8  & 16 & 0.001 & 68  & 90  & 89  & 105 & 0.2  & 0.025 & 0.37 & 0.013 \\
+DeconvNet & 8  & 8  & 0.001 & 154 & 74  & 94  & 74  & 0.2  & 0.03  & 0.37 & 0.038 \\
+MultiRes  & 8  & 8  & 0.01  & 24  & 41  & 46  & 63  & 0.5  & 0.008 & 0.52 & 0.117 \\
+MultiRes  & 16 & 16 & 0.01  & 49  & 34  & 41  & 39  & 0.5  & 0.009 & 0.52 & 0.018 \\
+MultiRes  & 8  & 32 & 0.001 & 111 & 106 & 94  & 116 & 0.48 & 0.006 & 0.55 & 0.025
+\end{tabular}
+\end{table}
+
+\begin{table}
+\centering
+\caption[Grid search results for spray dataset]{Grid search results for spray dataset. The best three models for each architecture are shown based on the average validation loss over 4-fold cross validation.}
+\label{table:spray_best_models}
+\begin{tabular}{llllllllllll}
+\multicolumn{4}{l}{} &
+  \multicolumn{4}{l}{\begin{tabular}[c]{@{}l@{}}Last\\ epoch\end{tabular}} &
+  \multicolumn{2}{l}{\begin{tabular}[c]{@{}l@{}}Train\\ loss\end{tabular}} &
+  \multicolumn{2}{l}{\begin{tabular}[c]{@{}l@{}}Val.\\ loss\end{tabular}} \\
+Architecture &
+  \begin{tabular}[c]{@{}l@{}}Batch\\ size\end{tabular} &
+  Filters &
+  \begin{tabular}[c]{@{}l@{}}Learning\\ rate\end{tabular} &
+  1 &
+  2 &
+  3 &
+  4 &
+  Mean &
+  \begin{tabular}[c]{@{}l@{}}Std.\\ dev.\end{tabular} &
+  Mean &
+  \begin{tabular}[c]{@{}l@{}}Std.\\ dev.\end{tabular} \\ \hline
+U-Net     & 8  & 8  & 0.005 & 74  & 91  & 105 & 122 & 0.23 & 0.017 & 0.28 & 0.008 \\
+U-Net     & 8  & 8  & 0.001 & 113 & 97  & 74  & 114 & 0.2  & 0.019 & 0.28 & 0.006 \\
+U-Net     & 8  & 16 & 0.005 & 144 & 119 & 93  & 111 & 0.19 & 0.01  & 0.28 & 0.009 \\
+DeconvNet & 16 & 16 & 0.001 & 85  & 101 & 80  & 69  & 0.27 & 0.013 & 0.45 & 0.008 \\
+DeconvNet & 8  & 8  & 0.001 & 63  & 90  & 76  & 80  & 0.32 & 0.021 & 0.47 & 0.016 \\
+DeconvNet & 16 & 8  & 0.001 & 76  & 94  & 86  & 105 & 0.27 & 0.024 & 0.47 & 0.018 \\
+MultiRes  & 8  & 16 & 0.005 & 94  & 43  & 64  & 47  & 0.35 & 0.013 & 0.43 & 0.021 \\
+MultiRes  & 8  & 32 & 0.005 & 76  & 68  & 61  & 75  & 0.32 & 0.007 & 0.43 & 0.038 \\
+MultiRes  & 16 & 8  & 0.005 & 53  & 107 & 78  & 100 & 0.34 & 0.017 & 0.45 & 0.049
+\end{tabular}
+\end{table}

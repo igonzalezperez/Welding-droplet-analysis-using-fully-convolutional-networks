@@ -1,0 +1,76 @@
+\begin{tikzpicture}
+\tikzstyle{connection}=[ultra thick,every node/.style={sloped,allow upside down},draw=\edgecolor,opacity=0.7]
+\tikzstyle{copyconnection}=[ultra thick,every node/.style={sloped,allow upside down},draw={rgb:blue,4;red,1;green,1;black,3},opacity=0.7]
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Draw Encoder
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% conv1_1,conv1_2
+\def\ConvColor{rgb:red,50;green,227;blue,150}
+\def\ConvReluColor{rgb:red,50;green,200;blue,100}
+
+\pic[shift={(0,0,0)}] at (0,0,0) {RightBandedBox={name=cr1,ylabel=$3\times3$,fill=\ConvColor,bandfill=\ConvReluColor,%
+        height=20,width={0.5},depth=20}};
+
+\node[inner sep=0,minimum size=0] (o0) at (-2,0,0) {}; % invisible node
+
+\node[inner sep=0,minimum size=0,right of=o0] (k0) {}; % invisible node
+
+\node[inner sep=0,minimum size=0] (o1) at (0,0,0) {}; % invisible node
+
+\node[inner sep=0,minimum size=0,right of=o1] (k1) {}; % invisible node
+
+\node[inner sep=0,minimum size=0] (o2) at (2.3,0,0) {}; % invisible node
+
+\node[inner sep=0,minimum size=0,right of=o2] (k2) {}; % invisible node
+
+%%%%%%%%%%
+% conv2_1,conv2_2
+\pic[shift={(2,0,0)}] at (cr1-east) {RightBandedBox={name=cr2,%
+        xlabel={{"",""}},ylabel=$3\times3$,fill=\ConvColor,bandfill=\ConvReluColor,%
+        height=20,width={0.5,0.5},depth=20}};
+%%%%%%%%%%
+% conv3_1,conv3_2
+\pic[shift={(2,0,0)}] at (cr2-east) {RightBandedBox={name=cr3,ylabel=$3\times3$,fill=\ConvColor,bandfill=\ConvReluColor,%
+        height=20,width={0.5,0.5,0.5,0.5},depth=20}};
+
+        
+%%%%%%%%%%
+% conv4_1,conv4_2,conv4_3
+\pic[shift={(2,0,0)}] at (cr3-east) {RightBandedBox={name=cr4,ylabel=\hspace{-5pt}Concatenation,fill=\ConvColor,bandfill=\ConvReluColor,%
+        height=10,width={3,3,3},depth=10}};
+
+%%%%%%%%%%
+% conv3_1,conv3_2
+\pic[shift={(0,5,0)}] at (cr3-east) {RightBandedBox={name=id,ylabel=$1\times1$,fill=blue!20,bandfill=blue!20,%
+        height=10,width={0.5},depth=10}};
+
+
+\node[draw,circle,minimum size=1.6cm,inner sep=0pt, color = black, very thick, fill = black!5] (sum) at (12,0) {\Huge $\mathbf{+}$};
+
+\node[inner sep=0,minimum size=0] (k3) at (15,0) {}; % invisible node
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Draw connections
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\draw node (I) at (-3,0,0) {Input};
+
+\draw [connection]  (I)    -- node {\midarrow} (cr1-west);
+\draw [connection]  (cr1-east)    -- node {\midarrow} (cr2-west);
+\draw [connection]  (cr1-east)    -- node {\midarrow} (cr2-west);
+\draw [connection]  (cr2-east)    -- node {\midarrow} (cr3-west);
+\draw [connection]  (cr3-east)    -- node {\midarrow} (cr4-west);
+\draw [connection]  (cr4-east)    -- node {\midarrow} (sum);
+\draw [connection]  (sum)    -- node {\midarrow} (k3);
+
+
+
+\draw [connection]  (k1) - ++(0,-4) -| node {\midarrow} (cr4-southeast);
+\draw [connection]  (k2) - ++(0,-3) -| node {\midarrow} (cr4-south);
+\draw [connection]  (k0) |- node {\midarrow} (id-west);
+\draw [connection]  (id-east) -| node {\midarrow} (sum);
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{tikzpicture}

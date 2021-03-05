@@ -1,0 +1,35 @@
+\usepackage{tikz}
+\usepackage{neuralnetwork}
+\usepackage{ifthen}
+\usepackage{subcaption}
+\usetikzlibrary{shapes.multipart, matrix, patterns, spy, fit, calc, positioning, topaths, chains, quotes, arrows.meta}
+\usepackage{notoccite}
+\usepackage{relsize}
+\usepackage{bm}
+\usetikzlibrary{calc}
+\usepackage{color}
+\usepackage{pgfplots}
+\pgfplotsset{compat=newest, every axis/.append style={tick label style={/pgf/number format/fixed},font=\scriptsize,ylabel near ticks,xlabel near ticks,grid=major}}
+\pgfplotsset{}
+\usepackage{pgf-umlsd}
+\usepackage[]{fp}
+
+
+\usepackage{lscape}
+\usepackage{longtable}
+
+\usepgfplotslibrary{groupplots}
+\FPset{totalOffset}{0}
+
+\usepackage{import}
+\subimport{Config/layers/}{init}
+
+\def\ConvColor{rgb:yellow,5;red,4;white,5}
+\def\ConvReluColor{rgb:yellow,5;red,4;white,5}
+\def\PoolColor{rgb:red,1;black,0.3}
+\def\UnpoolColor{rgb:blue,2;green,1;black,0.3}
+\def\FcColor{rgb:blue,5;red,2.5;white,5}
+\def\FcReluColor{rgb:blue,5;red,5;white,4}
+\def\SoftmaxColor{rgb:magenta,5;black,7}
+
+\newcommand{\copymidarrow}{\tikz \draw[-Stealth,line width =0.8mm,draw={rgb:blue,4;red,1;green,1;black,3}] (-0.3,0) -- ++(0.3,0);}

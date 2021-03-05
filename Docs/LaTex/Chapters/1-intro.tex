@@ -1,0 +1,60 @@
+\begin{intro}
+\section{Introduction}
+%\cite{Duong, Casser, Ronneberger, Long, Noh, Ibtehaz, Ray, Kass, Zhai, Gunther, Zhang, Shi}
+The optimization of arc welding processes in general has always been an important task since it is necessary to get better results both in the quality of the joints as well as the efficiency of the process in terms of time and materials to produce durable and reliable results. There are constant efforts in improving the welding machines, using better quality materials, physical modeling of the process and increasing the automation of both the welding itself as well as the design in order to achieve an optimized welding process.
+
+A widely used arc welding technique is the Gas Metal Arc Welding (GMAW) in which a bare metal wire electrode is consumed while a shielding gas floods the area to avoid external contamination \cite{weld-review}. The study of this process is a complex task, since there are many fields involved such as fluid dynamics, heat transfer and solid mechanics. Also, from a technical standpoint there are several parameters that affect the process as a whole, such as voltage and current waveform, material and diameter of the electrode and shielding gas.
+
+One way to approach the study of GMAW in order to better understand and optimize the process is by using data-driven models. These models have thrived in recent years because of the high volume of data that can be collected using a wide range of sensor data such as images, acoustic signal, temperature, pressure, among many others. 
+
+Specifically, deep learning models have been able to solve problems which would otherwise be difficult or intractable. Deep learning models have reached state of the art results in tasks such as image classification, image segmentation, natural language processing and optimal control taking advantage of the large datasets available \cite{dl-review} and advances in hardware. Also, different scientific fields outside of the typical computer vision applications have successfully adopted this approach, such is the case in bio-medicine, prognostics and health management and the mining industry to name a few \cite{Ronneberger, Reza, Jia}.
+
+Furthermore, a data-driven approach for GMAW study poses the challenge of which parameters to measure and how to do it, since the process itself occurs at very high temperatures, it is difficult to use a measuring device directly, because it would need to resist these conditions while functioning optimally as well as not disturbing the process itself.
+
+Therefore, a suitable approach would be to use image data, since the camera can stay away from the process while capturing important information, namely the movement of the welding droplets from the wire to the weld pool. For this, the experimental setup would need a high speed video camera to properly record the process and the necessary filters in order to overcome the plasma glow. 
+
+Although deep learning models have been used to address problems like welding machine control and defect detection \cite{Gunther, Zhang}, the GMAW segmentation problem has only been tackled using standard computer vision techniques \cite{Ray, Zhai} in which the process is recorded and the video is processed to segment each frame and isolate the droplet from the background. Later, several geometric and kinematic properties can be computed. While suitable for the problem in theory, hitherto used methods cannot handle the amount of data that can be retrieved from the process when using high speed video cameras. 
+
+Consequently, a data-driven approach using deep learning models would be suitable to solve a task such as droplet segmentation in a GMAW process while also being able to process thousands of images in seconds or minutes, after the training is done.
+
+The segmentation problem is not unique to the arc welding study, and has been addressed in other contexts using different techniques including deep learning to solve problems such as localizing medical abnormalities \cite{medical-image-survey} like aneurysms, tumors or cancerous elements \cite{aneurysm, tumor, cancer}. Surveillance is also a common application for pedestrian detection and traffic surveillance \cite{pedestrians, traffic}. Other fields in which segmentation is applied are image detection in forensics \cite{forensics1, forensics2, forensics3} and satellite imagery \cite{satellite}.
+
+The main idea in the segmentation task is to have an input image that is then separated into two or more regions. Image segmentation can refer to several related problems, the classic version of the problem is semantic segmentation in which each pixel of an image is labeled from a predefined set of possible classes so that the resulting regions have some kind of visual or semantic relationship. Another kind of segmentation is instance segmentation, in which subjects are not only separated semantically, but also instance-wise, that is multiple occurrences of the same subject are labeled differently \cite{segmentation-survey}. Applied to the GMAW droplet segmentation problem, semantic segmentation would consist in assigning each pixel either a droplet label or a background label. Furthermore, instance segmentation would also assign separate labels to each droplet.
+
+In the deep learning framework, a common family of models used for segmentation tasks are the Fully Convolutional Networks (FCN). These networks consist only of convolutional layers and therefore can output an image from an image input which is not possible when using fully connected layers since they flatten the input \cite{segmentation-survey}. 
+
+Particularly, the U-Net model, which has had great success in tasks using biomedicine image data, like alveolar segmentation and mitochondria detection \cite{Duong, Casser}. These datasets have rather simple subjects compared to other tasks in traffic segmentation or face recognition and the problem is mainly subject-background separation, which is the same scenario as in the GMAW segmentation problem. Additionally, the U-Net model has also been improved upon its original application, and other variants have been used like DeconvUnet and MultiResUnet \cite{Noh, Ibtehaz} which address some drawbacks of the original architecture.
+
+For these reasons, this thesis aims to use Deep Learning models to be able to segment a large number of images and calculate geometric and kinematic features of droplets from a GMAW process in an automated and reliable manner.
+
+\section{Motivation}
+
+The purpose of this work is to further develop the automated analysis of a welding process, specifically a GMAW setup with globular and spray transfer modes, by using deep learning techniques. As stated before, there is an ever increasing use of deep learning techniques in diverse fields of study because of the large amounts of data available, as well as the outstanding results they can achieve, specially in computer vision with the use of convolutional neural networks. This coupled with necessity of a better understanding of the welding process makes it an interesting project, since segmentation problems have not been addressed for a large volume of high speed video images.
+
+\section{Aim of the work}
+\subsection{General objective}
+Propose a deep learning supervised segmentation model for High Speed Video recordings of globular and spray metal transfer for the posterior calculation of relevant properties of the droplets such as position, velocity, acceleration, area, perimeter and frequency.
+
+\subsection{Specific objectives}
+\begin{itemize}
+    \item Retrieve image data from High Speed Videos of globular and spray metal transfer processes to build a dataset.
+    \item Manually label images in order to have ground truth data to train a supervised deep learning model.
+    \item Implement deep learning segmentation models, namely fully convolutional networks, to generate segmentation masks for every image in their respective datasets (globular and spray transfer). Measure error metrics such as Jaccard distance and select best performing model.
+    \item Use the generated masks to calculate properties of the droplet and the process in general: Position, velocity, acceleration, area, perimeter, material deposition, droplet frequency and oscillation.
+    \item Compare obtained masks with original images.
+\end{itemize}
+
+\subsection{Scope}
+
+The welding videos are provided by the Canadian Centre for Welding and Joining (CCWJ), so the video files are the starting point for this thesis. Therefore no experimental setup is studied because this has been previously addressed at the CCWJ laboratories when shooting the videos. The GMAW metal transfer modes considered are globular and spray.
+
+The processing of the videos in this research intends to use the files as separate frames to get a label for each one separating the background from the droplet boundaries using a Fully Convolutional Neural Network (FCN) for which a small sample of the dataset is labeled manually in order to train. A couple of models are to be compared: U-Net, DeconvNet and MultiResUnet. Then, the best performing model will be used to get the definitive predictions. The different transfer modes are trained separately, so there is one model for globular and another for spray. Although it is possible to train one model with all the data, this would trade accuracy for generality which is not convenient when measuring the droplet properties considering that building two models is inexpensive in terms of computation time.
+
+Furthermore, the generated labels are used to calculate relevant features of the process which can then be used by an expert to better understand the process. The code is written in \texttt{python} using existing libraries for reading video files, computer vision, data science and machine learning (\texttt{pycine}, \texttt{numpy}, \texttt{scipy}, \texttt{cv}, \texttt{tensorflow}, etc).
+
+\section{Structure of the work}
+
+In Chapter 2 the methodology of the work is presented. Subsequently, in Chapter 3 background is shown, this includes the problem of welding optimization in general and the attempts made to solve the problem of droplet segmentation specifically. Also, a background of deep learning techniques is given, particularly the approach for segmentation tasks. After, in Chapter 4 the proposed deep learning models are explained in detail. Then, in Chapter 5 study cases are shown, the datasets are explained and the differences and nuances of each GMAW transfer mode are discussed. In Chapter 6 results are shown and analyzed, its implications and relevance are discussed. Finally, conclusions are made regarding the proposed model and how it can provide important information of the welding process, and the potential of deep learning in the welding field.
+
+
+\end{intro}

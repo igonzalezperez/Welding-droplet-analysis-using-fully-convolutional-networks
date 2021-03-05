@@ -1,0 +1,52 @@
+\chapter{Methodology}
+
+This work explores the use of supervised deep learning segmentation models to process GMAW high speed videos for further postprocessing. The process to achieve this is as follows:
+
+\begin{enumerate}
+    \item \textbf{Literature review:} The first step consists of broadly studying the GMAW welding process and why it would be important to optimize and understand it better. Furthermore, the specific approach of image segmentation is studied within the field, to know what has been done until now.\\ 
+    
+    In parallel, a study of the deep learning segmentation models and applications is carried out to know the tools available to solve the task and which kinds of problems have been tackled so far.\\
+    
+    \item \textbf{Gathering and preprocessing the data:}
+    The dataset used was kindly provided by the Canadian Centre for Welding and Joining (CCWJ). These are high speed videos of GMAW processes for globular and spray transfer modes. The videos are .cine files which are read in python with the use of the pycine library. In this way, each frame is stored as a 3D array into a \texttt{.npz} file.\\
+    
+    Additionally, a small sample of images is taken to be labeled using LabelBox since the proposed model is supervised. The samples are carefully selected so that the whole process is depicted. Also, each transfer mode has its own set of sampled data.\\
+    
+    Finally, since the labels are manual, the trainable dataset is rather small, so data augmentation is applied. Multiple transformations are performed in each image such that each image yields 5 augmented images.\\
+    
+    \item \textbf{Develop semantic segmentation models:}
+    A handful of models are used to be compared, these are the U-Net, DeconvUnet and MultiResUnet, and they are built in tensorflow 2.0. The models are trained with image files from the sampled ones that have labels, then the rest of the images without labels are tested. Since there are two different transfer modes considered, globular and spray, they are trained separately, so for each network there are two trained models.\\
+    
+    \item \textbf{Postprocess segmentation masks:}
+    The outputs of the segmentation network are then processed using python's computer vision libraries to calculate several relevant characteristics such as position, velocity, area and frequency.\\
+    
+    \item \textbf{Analysis of results:}
+    The proposed models are compared to discuss about which one would be better for the task. Additionally, the postprocessed features are discussed in terms of their usefulness when optimizing or designing a GMAW process. Finally, future prospects of deep learning techniques in the welding industry are presented.
+    
+\end{enumerate}
+
+\section{Resources available for this Thesis}
+The computational requirements for this Thesis were met by a desktop computer provided by Smart Reliability and Maintenance Integration (SRMI) Laboratory of the University of Chile with the following
+specifications:
+\begin{itemize}
+    \item Ubuntu 16.04.06 LTS.
+    \item Intel Core i5-7600K CPU @ 3.80GHz x 4. 
+    \item 32GB RAM.
+    \item NVIDIA TITAN Xp/PCIe/SSE2.
+\end{itemize}
+
+Additionally, the software and libraries needed include:
+\begin{itemize}
+    \item Python 3.8 as programming language.
+    \item Phantom Camera Control software to view .cine files and inspect metadata.
+     \item LabelBox tools for segmentation of images.
+    \item Tensorflow 2.0.0 as a deep learning framework.
+    \item Pycine library to read .cine files in python.
+    \item Numpy, Pillow, Scikit-learn for preprocessing and post-processing of data.
+    \item Matplotlib for data visualization.
+    \item Dependencies required for the above to work properly.
+\end{itemize}
+
+Regarding the data used, it was provided by the Canadian Centre for Welding and Joining (CCWJ) at the University of Alberta, this collaboration was through the Emerging Leaders in the Americas Program (ELAP) which awarded a scholarship to undergo an exchange to the University of Alberta for a period of six months.
+
+Finally, version control of the project was done using Git. All of the coding, results and related documents can be found in Github\footnote{\url{https://github.com/igonzalezperez/Welding-droplet-analysis-using-fully-convolutional-networks}.}.
