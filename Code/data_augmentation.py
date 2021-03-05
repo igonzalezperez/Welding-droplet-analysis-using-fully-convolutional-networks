@@ -10,7 +10,7 @@ import seaborn as sns
 from progressbar import progressbar as progress
 from imgaug import augmenters as iaa
 from imgaug.augmentables.segmaps import SegmentationMapsOnImage
-from utils.misc import set_size
+from utils.postprocessing import set_size
 
 # video settings
 matplotlib.rcParams['animation.ffmpeg_path'] = os.path.abspath(

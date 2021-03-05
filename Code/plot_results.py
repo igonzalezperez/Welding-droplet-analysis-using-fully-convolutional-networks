@@ -7,6 +7,7 @@ using predicted segmentation maps.
 import os
 import pickle
 import numpy as np
+from PIL import Image
 import seaborn as sns
 import matplotlib
 import matplotlib.pyplot as plt
@@ -15,19 +16,12 @@ from matplotlib import animation
 from matplotlib.animation import FuncAnimation
 from scipy.signal import find_peaks
 from utils.postprocessing import parse_centroid_coords, smooth_signal
-from utils.misc import set_size
+from utils.postprocessing import set_size, latex_plot_config
+from utils.misc import get_concat_h
 
 # video settings
 matplotlib.rcParams['animation.ffmpeg_path'] = os.path.abspath(
     'C:\\ffmpeg\\bin\\ffmpeg.exe')
-# output images for LaTex
-# matplotlib.use("pgf")
-# matplotlib.rcParams.update({
-#     "pgf.texsystem": "pdflatex",
-#     'font.family': 'serif',
-#     'text.usetex': True,
-#     'pgf.rcfonts': False,
-# })
 # set style
 sns.set()
 
@@ -39,9 +33,9 @@ sns.set()
 # LaTex \textwidth = 472.03123 pt. Useful for figure sizing
 
 ARCHITECTURE_NAME = 'unet'
-DATASET = 'Globular'
-N_FILTERS = 32
-BATCH_SIZE_TRAIN = 16
+DATASET = 'Spray'
+N_FILTERS = 8
+BATCH_SIZE_TRAIN = 8
 EPOCHS = 200
 
 DATA_DIR_RGB = os.path.join(
@@ -75,6 +69,45 @@ WRITER = animation.writers['ffmpeg'](fps=30, bitrate=1800)
 # %% FUNCTIONS
 
 
+def plot_centroids(num, save=False):
+    '''
+    DOC
+    '''
+    cent = CENTROIDS[num]
+    x_coord, y_coord = parse_centroid_coords(cent)
+    image = Image.fromarray(IMAGES[num])
+    mask = Image.fromarray(MASKS[num])
+    img_mask = get_concat_h(image, mask)
+    with sns.axes_style('dark'):
+        fig, axes = plt.subplots(1, 1, figsize=set_size(
+            fraction=.6, aspect_ratio=IMAGES.shape[1]/(2*IMAGES.shape[2]), subplots=(1, 1)))
+    axes.set_xticks([])
+    axes.set_yticks([])
+
+    axes.set_title(f'Frame {num}')
+    axes.imshow(img_mask)
+
+    if len(cent) > 1:
+        axes.scatter(x_coord, y_coord, s=10, marker='x', color='r')
+        axes.scatter([x+IMAGES.shape[2] for x in x_coord],
+                     y_coord, s=10, marker='x', color='r')
+
+    elif len(cent) == 1:
+        axes.scatter(x_coord, y_coord, s=10, marker='.', color='k')
+        axes.scatter([x+IMAGES.shape[2] for x in x_coord],
+                     y_coord, s=10, marker='.', color='k')
+
+    if save:
+        os.makedirs(os.path.join('Output', 'Plots',
+                                 'centroid_samples'), exist_ok=True)
+        fig.tight_layout()
+        latex_plot_config()
+        fig.savefig(os.path.join('Output', 'Plots',
+                                 'centroid_samples', f'{DATASET.lower()}_{num}.pgf'))
+    else:
+        plt.show()
+
+
 def animate_centroids(save=False):
     '''
     Saves animation of original image with markers for the centroids of each droplet.
@@ -82,7 +115,6 @@ def animate_centroids(save=False):
     def centroid_img_generator():
         for cent, image in zip(CENTROIDS, IMAGES):
             yield cent, image
-
     data = centroid_img_generator()
     cent, img = next(data)
     x_coord, y_coord = parse_centroid_coords(cent)
@@ -99,6 +131,7 @@ def animate_centroids(save=False):
     else:
         single_droplet, = axes.plot([], [], 'k.')
         multi_droplet, = axes.plot([], [], 'rx')
+    plt.show()
 
     def animate(i):
         try:
@@ -202,31 +235,21 @@ def animate_areas(save=False, max_width=200):
         for i, img in enumerate(IMAGES):
             yield AREAS[i], img
     data = areas_img_generator()
-    areas, img = next(data)
     fig = plt.figure()
     grid_spec = fig.add_gridspec(2, 1)
+
     ax0 = fig.add_subplot(grid_spec[0, 0])
     ax0.xaxis.tick_top()
     ax0.set_xlabel('Frame')
     ax0.xaxis.set_label_position('top')
     ax0.set_ylabel(r'Area [$mm^2$]')
+    ax0.set_ylim([0, max(max(AREAS))])
 
     with sns.axes_style('dark'):
         ax1 = fig.add_subplot(grid_spec[1, 0])
     ax1.set_xticks([])
     ax1.set_yticks([])
-    if len(areas) == 0:
-        ax0.plot(0, 0, 'bo')
-    else:
-        for area in areas:
-            if len(areas) > 1:
-                ax0.plot(0, area, 'rx')
-            elif len(areas) == 1:
-                ax0.plot(0, area, 'k.')
-
-    image_ax = ax1.imshow(img)
-
-    ax0.set_ylim([0, max(max(AREAS))])
+    image_ax = ax1.imshow(np.zeros(IMAGES[0].shape))
 
     original_area = []
     for areas in AREAS:
@@ -237,7 +260,18 @@ def animate_areas(save=False, max_width=200):
     smooth_area = smooth_signal(np.array(original_area), 51)
     peaks = find_peaks(-smooth_area, height=-5, width=50, prominence=5)
 
+    def init():
+        image_ax.set_data(np.zeros(IMAGES[0].shape))
+        return image_ax,
+
     def animate(i):
+        print(i)
+        if i % max_width == 0 and i != 0:
+            ax0.clear()
+            ax0.xaxis.tick_top()
+            ax0.set_xlabel('Frame')
+            ax0.xaxis.set_label_position('top')
+            ax0.set_ylabel(r'Area [$mm^2$]')
         areas, img = next(data)
         if len(areas) == 0:
             ax0.plot(i, 0, 'bo')
@@ -251,16 +285,10 @@ def animate_areas(save=False, max_width=200):
             ax0.axvline(x=i, color='k', alpha=0.4, linestyle='--')
         with sns.axes_style('dark'):
             image_ax.set_data(img)
-        plt.title(f'Frame #{i}')
-        if (i+1) % max_width == 0:
-            ax0.clear()
-            ax0.xaxis.tick_top()
-            ax0.set_xlabel('Frame')
-            ax0.xaxis.set_label_position('top')
-            ax0.set_ylabel(r'Area [$mm^2$]')
+        plt.title(f'Frame {i}')
         return image_ax,
 
-    ani = FuncAnimation(fig, animate, save_count=N_FRAMES-1)
+    ani = FuncAnimation(fig, animate, init_func=init, save_count=N_FRAMES)
     if save:
         ani.save(os.path.join('Output', 'Videos',
                               f'areas_{DATASET.lower()}.mp4'), writer=WRITER)
@@ -652,4 +680,12 @@ def plot_smooth_area():
 
 # %% MAIN
 if __name__ == "__main__":
-    animate_areas_with_masks(save=True, max_width=1000)
+    # animate_centroids()
+    plot_centroids(0, save=True)
+    plot_centroids(42, save=True)
+    plot_centroids(656, save=True)
+    # animate_centroids()
+    # animate_areas(save=True, max_width=200)
+    # with sns.axes_style('dark'):
+    #     plt.imshow(IMAGES[0])
+    # plt.show()
