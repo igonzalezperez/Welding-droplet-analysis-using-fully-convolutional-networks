@@ -15,9 +15,8 @@ import matplotlib.gridspec as gridspec
 from matplotlib import animation
 from matplotlib.animation import FuncAnimation
 from scipy.signal import find_peaks
-from utils.postprocessing import parse_centroid_coords, smooth_signal
-from utils.postprocessing import set_size, latex_plot_config
-from utils.misc import get_concat_h
+from utils.postprocessing import parse_centroid_coords, smooth_signal, set_size, latex_plot_config, axvlines
+from utils.misc import get_concat_h, chunks
 
 # video settings
 matplotlib.rcParams['animation.ffmpeg_path'] = os.path.abspath(
@@ -33,9 +32,9 @@ sns.set()
 # LaTex \textwidth = 472.03123 pt. Useful for figure sizing
 
 ARCHITECTURE_NAME = 'unet'
-DATASET = 'Spray'
-N_FILTERS = 8
-BATCH_SIZE_TRAIN = 8
+DATASET = 'Globular'
+N_FILTERS = 32
+BATCH_SIZE_TRAIN = 16
 EPOCHS = 200
 
 DATA_DIR_RGB = os.path.join(
@@ -71,7 +70,13 @@ WRITER = animation.writers['ffmpeg'](fps=30, bitrate=1800)
 
 def plot_centroids(num, save=False):
     '''
-    DOC
+    Plots a specific frame of a video and overlays the predicted centroid.
+
+    Args:
+    num {int} -- mumber of the frame to plot.
+
+    Kwargs:
+    save {bool} -- wether to save the plot as .pgf file or to show using plt.show().
     '''
     cent = CENTROIDS[num]
     x_coord, y_coord = parse_centroid_coords(cent)
@@ -111,6 +116,9 @@ def plot_centroids(num, save=False):
 def animate_centroids(save=False):
     '''
     Saves animation of original image with markers for the centroids of each droplet.
+
+    Kwargs:
+    save {bool} -- wether to save the animation as a .mp4 or show it using plt.show().
     '''
     def centroid_img_generator():
         for cent, image in zip(CENTROIDS, IMAGES):
@@ -160,81 +168,91 @@ def animate_centroids(save=False):
         plt.show()
 
 
-def plot_areas():
+def plot_areas(width, save=False):
     '''
-    DOC
+    Plots area of a droplet over time for consecutive time frames. Black dots represent one droplet, red crosses are for multiple
+    droplets in the same frame and blue dots means no droplet is detected (area=0). Also, the detachment of droplets is shown in
+    dashed vertical lines obtained by finding the (minimum) peaks of a smoothed version (green curve) of the original signal.
+    Smoothing is done using a hanning window over the data. Datapoints that have multiple values are summed.
+
+    Args:
+    width {int} -- length of the time frames, i.e. a signal with length 100 plotted with width 10 will yield 10 consecutive plots.
+
+    Kwargs:
+    save {bool} -- wether to save each plot as a .pgf file or show it using plt.show().
+    '''
+    if save:
+        latex_plot_config()
+    areas_chunks = chunks(AREAS, width)
+
+    for k, chunk in enumerate(areas_chunks):
+        fig, axes = plt.subplots(1, 1, figsize=set_size(aspect_ratio=.5))
+        axes.set_xlabel('Frame')
+        axes.set_ylabel(r'Area [$mm^2$]')
+        axes.set_ylim([-.1, max(max(chunk))+1])
+        single_id, single = ([], [])
+        multi_id, multi = ([], [])
+        zero_id = []
+        original_area_id, original_area = ([], [])
+        for i, areas in enumerate(chunk):
+            if len(areas) > 0:
+                original_area.append(sum(areas))
+            else:
+                original_area.append(0)
+            original_area_id.append(i+width*k)
+
+            if len(areas) == 0:
+                zero_id.append(i + width*k)
+            else:
+                for area in areas:
+                    if len(areas) == 1:
+                        single_id.append(i+width*k)
+                        single.append(area)
+                    else:
+                        multi_id.append(i+width*k)
+                        multi.append(area)
+        smooth_area = smooth_signal(np.array(original_area), 51)
+        peaks = find_peaks(-smooth_area, height=-5, prominence=2)[0]
+
+        axes.scatter(zero_id, np.zeros(len(zero_id)), s=7,
+                     marker='o', color='b', label='Zero droplets')
+        axes.scatter(single_id, single, s=7, marker='.',
+                     color='k', label='Single droplet')
+        axes.scatter(multi_id, multi, s=7, marker='x',
+                     color='r', label='Multiple droplets')
+        axvlines(xs=peaks+width*k, ax=axes, label='Detachment',
+                 linestyle='--', color='k')
+        axes.plot(original_area_id,
+                  smooth_area, 'g-', label='Smoothed')
+        axes.legend()
+        if save:
+            fig.tight_layout()
+            fig.savefig(os.path.join('Output', 'Plots', 'areas',
+                                     f'{DATASET.lower()}_area_{k}.pgf'))
+            plt.close(fig=fig)
+        else:
+            plt.show()
+
+
+def animate_areas(width, save=False):
+    '''
+    Animates area of a droplet over time for consecutive time frames. Black dots represent one droplet, red crosses are for multiple
+    droplets in the same frame and blue dots means no droplet is detected (area=0). Also, the detachment of droplets is shown in
+    dashed vertical lines obtained by finding the (minimum) peaks of a smoothed version of the original signal.
+    Smoothing is done using a hanning window over the data. Datapoints that have multiple values are summed.
+    Below the graph, the corresponding image for that frame is displayed.
+
+    Args:
+    width {int} -- length of the time frames, e.g. a signal with length 100 animated with width 10 will refresh the animation
+                   every 10 frames.
+
+    Kwargs:
+    save {bool} -- wether to save the animation as a .mp4 file or show it using plt.show().
     '''
     def areas_img_generator():
         for i, img in enumerate(IMAGES):
             yield AREAS[i], img
     data = areas_img_generator()
-    areas, img = next(data)
-    fig = plt.figure()
-    grid_spec = fig.add_gridspec(2, 1)
-    ax0 = fig.add_subplot(grid_spec[0, 0])
-    ax0.xaxis.tick_top()
-    ax0.set_xlabel('Frame')
-    ax0.xaxis.set_label_position('top')
-    ax0.set_ylabel(r'Area [$mm^2$]')
-    with sns.axes_style('dark'):
-        ax1 = fig.add_subplot(grid_spec[1, 0])
-    ax1.set_xticks([])
-    ax1.set_yticks([])
-    if len(areas) == 0:
-        ax0.plot(0, 0, 'bo')
-    else:
-        for area in areas:
-            if len(areas) > 1:
-                ax0.plot(0, area, 'rx')
-            elif len(areas) == 1:
-                ax0.plot(0, area, 'k.')
-
-    image_ax = ax1.imshow(img)
-
-    ax0.set_ylim([0, max(max(AREAS))])
-
-    original_area = []
-    for areas in AREAS:
-        if len(areas) > 0:
-            original_area.append(sum(areas))
-        else:
-            original_area.append(0)
-    smooth_area = smooth_signal(np.array(original_area), 51)
-    peaks = find_peaks(-smooth_area, height=-5, width=50, prominence=5)
-
-    for i, data_i in enumerate(data):
-        areas, img = data_i
-        if len(areas) == 0:
-            ax0.plot(i, 0, 'bo')
-        else:
-            for area in areas:
-                if len(areas) > 1:
-                    ax0.plot(i, area, 'rx')
-                elif len(areas) == 1:
-                    ax0.plot(i, area, 'k.')
-        if i in peaks[0]:
-            ax0.axvline(x=i, color='k', alpha=0.4, linestyle='--')
-        with sns.axes_style('dark'):
-            image_ax.set_data(img)
-        if (i+1) % 1000 == 0:
-            ax0.clear()
-            ax0.xaxis.tick_top()
-            ax0.set_xlabel('Frame')
-            ax0.xaxis.set_label_position('top')
-            ax0.set_ylabel(r'Area [$mm^2$]')
-        plt.pause(.001)
-    plt.show()
-    # plt.savefig(os.path.join('Output', 'Videos', 'area_spray', f'{i}.jpg'))
-
-
-def animate_areas(save=False, max_width=200):
-    '''
-    DOC
-    '''
-    def areas_img_generator():
-        for i, img in enumerate(IMAGES):
-            yield AREAS[i], img
-    data = areas_img_generator()
     fig = plt.figure()
     grid_spec = fig.add_gridspec(2, 1)
 
@@ -243,7 +261,6 @@ def animate_areas(save=False, max_width=200):
     ax0.set_xlabel('Frame')
     ax0.xaxis.set_label_position('top')
     ax0.set_ylabel(r'Area [$mm^2$]')
-    ax0.set_ylim([0, max(max(AREAS))])
 
     with sns.axes_style('dark'):
         ax1 = fig.add_subplot(grid_spec[1, 0])
@@ -258,7 +275,7 @@ def animate_areas(save=False, max_width=200):
         else:
             original_area.append(0)
     smooth_area = smooth_signal(np.array(original_area), 51)
-    peaks = find_peaks(-smooth_area, height=-5, width=50, prominence=5)
+    peaks = find_peaks(-smooth_area, height=-5, prominence=2)
 
     def init():
         image_ax.set_data(np.zeros(IMAGES[0].shape))
@@ -266,7 +283,7 @@ def animate_areas(save=False, max_width=200):
 
     def animate(i):
         print(i)
-        if i % max_width == 0 and i != 0:
+        if i != 0 and i % width == 0:
             ax0.clear()
             ax0.xaxis.tick_top()
             ax0.set_xlabel('Frame')
@@ -296,95 +313,16 @@ def animate_areas(save=False, max_width=200):
         plt.show()
 
 
-def plot_areas_with_masks():
+def animate_areas_with_masks(width, save=False):
     '''
-    DOC
-    '''
-    def areas_centroid_img_mask_generator():
-        for i, cent_img_mask in enumerate(zip(CENTROIDS, IMAGES, MASKS)):
-            yield AREAS[i], *cent_img_mask
-    data = areas_centroid_img_mask_generator()
-    areas, cent, img, mask = next(data)
-    x_coord, y_coord = parse_centroid_coords(cent)
-    fig = plt.figure()
-    grid_spec = fig.add_gridspec(2, 2)
-    ax0 = fig.add_subplot(grid_spec[0, :])
-    with sns.axes_style('dark'):
-        ax1 = fig.add_subplot(grid_spec[1, 0])
-        ax2 = fig.add_subplot(grid_spec[1, 1])
+    Same as animate_areas() but includes the corresponding masks. Also displays the centroids.
 
-    if len(areas) == 0:
-        ax0.plot(0, 0, 'bo')
-    else:
-        for area in areas:
-            if len(areas) > 1:
-                ax0.plot(0, area, 'rx')
-            elif len(areas) == 1:
-                ax0.plot(0, area, 'k.')
+    Args:
+    width {int} -- length of the time frames, e.g. a signal with length 100 animated with width 10 will refresh the animation
+                   every 10 frames.
 
-    image_ax = ax1.imshow(img)
-    mask_ax = ax2.imshow(mask)
-    ax0.set_ylim([0, max(max(AREAS))])
-
-    if len(cent) > 1:
-        single_droplet_1, = ax1.plot([], [], 'k.')
-        multi_droplet_1, = ax1.plot(x_coord, y_coord, 'rx')
-
-        single_droplet_2, = ax2.plot([], [], 'k.')
-        multi_droplet_2, = ax2.plot(x_coord, y_coord, 'rx')
-    elif len(cent) == 1:
-        single_droplet_1, = ax1.plot(x_coord, y_coord, 'k.')
-        multi_droplet_1, = ax1.plot([], [], 'rx')
-
-        single_droplet_2, = ax2.plot(x_coord, y_coord, 'k.')
-        multi_droplet_2, = ax2.plot([], [], 'rx')
-
-    else:
-        single_droplet_1, = ax1.plot([], [], 'k.')
-        multi_droplet_1, = ax1.plot([], [], 'rx')
-
-        single_droplet_2, = ax2.plot([], [], 'k.')
-        multi_droplet_2, = ax2.plot([], [], 'rx')
-
-    for i, _data in enumerate(data):
-        areas, cent, img, mask = _data
-        if i < 6411:
-            continue
-        if len(areas) == 0:
-            ax0.plot(i, 0, 'bo')
-        else:
-            for area in areas:
-                if len(areas) > 1:
-                    ax0.plot(i, area, 'rx')
-                elif len(areas) == 1:
-                    ax0.plot(i, area, 'k.')
-        image_ax.set_data(img)
-        mask_ax.set_data(mask)
-
-        x_coord, y_coord = parse_centroid_coords(cent)
-        if len(cent) > 1:
-            single_droplet_1.set_data([], [])
-            single_droplet_2.set_data([], [])
-            multi_droplet_1.set_data(x_coord, y_coord)
-            multi_droplet_2.set_data(x_coord, y_coord)
-        elif len(cent) == 1:
-            single_droplet_1.set_data(x_coord, y_coord)
-            single_droplet_2.set_data(x_coord, y_coord)
-            multi_droplet_1.set_data([], [])
-            multi_droplet_2.set_data([], [])
-        else:
-            single_droplet_1.set_data([], [])
-            single_droplet_2.set_data([], [])
-            multi_droplet_1.set_data([], [])
-            multi_droplet_2.set_data([], [])
-        fig.suptitle(f'Frame #{i}')
-        plt.savefig(os.path.join('Output', 'Videos',
-                                 'area_mask_spray', f'{i}.jpg'))
-
-
-def animate_areas_with_masks(save=False, max_width=200):
-    '''
-    DOC
+    Kwargs:
+    save {bool} -- wether to save the animation as a .mp4 file or show it using plt.show().
     '''
     def areas_centroid_img_mask_generator():
         for i, cent_img_mask in enumerate(zip(CENTROIDS, IMAGES, MASKS)):
@@ -439,8 +377,23 @@ def animate_areas_with_masks(save=False, max_width=200):
 
         single_droplet_2, = ax2.plot([], [], 'k.')
         multi_droplet_2, = ax2.plot([], [], 'rx')
+    original_area = []
+    for areas in AREAS:
+        if len(areas) > 0:
+            original_area.append(sum(areas))
+        else:
+            original_area.append(0)
+    smooth_area = smooth_signal(np.array(original_area), 51)
+    peaks = find_peaks(-smooth_area, height=-5, prominence=2)
 
     def animate(i):
+        print(i)
+        if i != 0 and i % width == 0:
+            ax0.clear()
+            ax0.xaxis.tick_top()
+            ax0.set_xlabel('Frame')
+            ax0.xaxis.set_label_position('top')
+            ax0.set_ylabel(r'Area [$mm^2$]')
         areas, cent, img, mask = next(data)
         if len(areas) == 0:
             ax0.plot(i, 0, 'bo')
@@ -469,13 +422,9 @@ def animate_areas_with_masks(save=False, max_width=200):
             single_droplet_2.set_data([], [])
             multi_droplet_1.set_data([], [])
             multi_droplet_2.set_data([], [])
-        ax1.set_title(f'Frame #{i}')
-        if (i+1) % max_width == 0:
-            ax0.clear()
-            ax0.xaxis.tick_top()
-            ax0.set_xlabel('Frame')
-            ax0.xaxis.set_label_position('top')
-            ax0.set_ylabel(r'Area [$mm^2$]')
+        if i in peaks[0]:
+            ax0.axvline(x=i, color='k', alpha=0.4, linestyle='--')
+        ax1.set_title(f'Frame {i}')
         return image_ax, mask_ax, single_droplet_1, multi_droplet_1, single_droplet_2, multi_droplet_2,
 
     ani = FuncAnimation(fig, animate, save_count=N_FRAMES-1)
@@ -489,6 +438,9 @@ def animate_areas_with_masks(save=False, max_width=200):
 def animate_centroids_with_masks(save=False):
     '''
     Saves animation of original image and mask with markers for the centroids of each droplet.
+
+    Kwargs:
+    save {bool} -- wether to save the animation as a .mp4 or to show it with plt.show().
     '''
     def centroid_mask_img_generator():
         for cent, image, mask in zip(CENTROIDS, IMAGES, MASKS):
@@ -541,7 +493,7 @@ def animate_centroids_with_masks(save=False):
                 single_droplet_2.set_data([], [])
                 multi_droplet_1.set_data([], [])
                 multi_droplet_2.set_data([], [])
-            plt.title(f'Frame #{i}')
+            plt.title(f'Frame {i}')
             return image_ax, mask_ax, single_droplet_1, multi_droplet_1, single_droplet_2, multi_droplet_2,
 
         except StopIteration as error:
@@ -558,6 +510,12 @@ def animate_centroids_with_masks(save=False):
 def plot_strip(num, save=False):
     '''
     Plots horizontal strip of an image's pixel values and compares it to mask prediction.
+
+    Args:
+    num {int} -- number of frame to plot.
+
+    Kwargs:
+    save {bool} -- wether to save the plot as a .pgf or display it with plt.show().
     '''
     cent = GEOMETRY['centroids'][num]
     area = GEOMETRY['areas'][num]
@@ -623,69 +581,6 @@ def plot_strip(num, save=False):
         plt.show()
 
 
-def split_areas():
-    '''
-    DOC
-    '''
-    single_droplet = []
-    single_droplet_idx = []
-    multi_droplet = []
-    multi_droplet_idx = []
-    zero_droplet = []
-    zero_droplet_idx = []
-
-    for i, areas in enumerate(AREAS):
-        if len(areas) == 0:
-            zero_droplet.append(0)
-            zero_droplet_idx.append(i)
-        elif len(areas) == 1:
-            single_droplet.append(areas[0])
-            single_droplet_idx.append(i)
-        else:
-            multi_droplet.append(tuple(areas))
-            multi_droplet_idx.append(i)
-
-    return single_droplet, single_droplet_idx, zero_droplet, zero_droplet_idx, multi_droplet, multi_droplet_idx
-
-
-def plot_smooth_area():
-    '''
-    DOC
-    '''
-    original_area = []
-    for areas in AREAS:
-        if len(areas) > 0:
-            original_area.append(np.mean(areas))
-        else:
-            original_area.append(0)
-    _, axes = plt.subplots(1, 1)
-    single, single_id, zero, zero_id, multi, multi_id = split_areas()
-    axes.scatter(single_id, single, alpha=0.3, c='black', s=5)
-    axes.scatter(zero_id, zero, alpha=0.3, c='blue', s=5)
-    for i, j in zip(multi_id, multi):
-        plt.scatter([i]*len(j), j, alpha=0.3, c='red', s=5, marker='x')
-    smooth_area = smooth_signal(np.array(original_area), 51, window='hamming')
-    axes.plot(smooth_area, label='Smooth')
-    peaks = find_peaks(-smooth_area, width=50,
-                       prominence=300, height=-2500)
-    for i, peak in enumerate(peaks[0]):
-        if i == 0:
-            axes.axvline(x=peak, color='k', alpha=0.4,
-                         linestyle='--', label='Detachment')
-        else:
-            axes.axvline(x=peak, color='k', alpha=0.4, linestyle='--')
-
-    plt.show()
-
-
 # %% MAIN
 if __name__ == "__main__":
-    # animate_centroids()
-    plot_centroids(0, save=True)
-    plot_centroids(42, save=True)
-    plot_centroids(656, save=True)
-    # animate_centroids()
-    # animate_areas(save=True, max_width=200)
-    # with sns.axes_style('dark'):
-    #     plt.imshow(IMAGES[0])
-    # plt.show()
+    animate_areas_with_masks(1000, True)

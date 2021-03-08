@@ -34,7 +34,7 @@ class UNET():
             self.optimizer = tf.optimizers.Adam(self.learning_rate)
 
         if loss_name == 'iou':
-            self.loss_fn = losses.iou_coef
+            self.loss_fn = losses.jaccard_distance_loss
         self.model = None
 
         self.width_padding = upper_round(

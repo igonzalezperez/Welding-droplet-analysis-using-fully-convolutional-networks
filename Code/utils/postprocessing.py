@@ -3,6 +3,7 @@ DOC
 '''
 # %% IMPORTS
 import numpy as np
+import matplotlib.pyplot as plt
 # %% FUNCTIONS
 
 
@@ -117,4 +118,25 @@ def smooth_signal(signal, window_len=11, window='hanning'):
         win = eval('np.'+window+'(window_len)')
 
     smoothed_signal = np.convolve(win/win.sum(), signal, mode='valid')
-    return smoothed_signal
+    return smoothed_signal[int(window_len/2-1):-int(window_len/2)-1]
+
+
+def axvlines(xs, ax=None, lims=None, **plot_kwargs):
+    '''
+    Draw vertical lines on plot
+    :param xs: A scalar, list, or 1D array of horizontal offsets
+    :param ax: The axis (or none to use gca)
+    :param lims: Optionally the (ymin, ymax) of the lines
+    :param plot_kwargs: Keyword arguments to be passed to plot
+    :return: The plot object corresponding to the lines.
+    '''
+    if ax is None:
+        ax = plt.gca()
+    xs = np.array((xs, ) if np.isscalar(xs) else xs, copy=False)
+    if lims is None:
+        lims = ax.get_ylim()
+    x_points = np.repeat(xs[:, None], repeats=3, axis=1).flatten()
+    y_points = np.repeat(np.array(lims + (np.nan, ))
+                         [None, :], repeats=len(xs), axis=0).flatten()
+    plot = ax.plot(x_points, y_points, scaley=False, **plot_kwargs)
+    return plot
