@@ -14,7 +14,8 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from matplotlib import animation
 from matplotlib.animation import FuncAnimation
-from scipy.signal import find_peaks
+# from matplotlib.patches import Ellipse
+from scipy.signal import find_peaks, hann
 from utils.postprocessing import parse_centroid_coords, smooth_signal, set_size, latex_plot_config, axvlines
 from utils.misc import get_concat_h, chunks
 
@@ -53,16 +54,17 @@ PX_TO_MM = 4.396153846153846 * 10**(-2)
 DATA_RGB = np.load(DATA_DIR_RGB)
 DATA_GRAY = np.load(DATA_DIR_GRAY)
 DATA_MASKS = np.load(PREDS_DIR)
+OFFSET = 0
+IMAGES = DATA_RGB['images'][OFFSET:]
+MASKS = DATA_MASKS['preds'][OFFSET:]
 
-IMAGES = DATA_RGB['images']
-MASKS = DATA_MASKS['preds']
 N_FRAMES = len(IMAGES)
 
 with open(GEOMETRY_DIR, 'rb') as f:
     GEOMETRY = pickle.load(f)
 
-CENTROIDS = GEOMETRY['centroids']
-AREAS = GEOMETRY['areas']
+CENTROIDS = GEOMETRY['centroids'][OFFSET:]
+AREAS = GEOMETRY['areas'][OFFSET:]
 
 WRITER = animation.writers['ffmpeg'](fps=30, bitrate=1800)
 # %% FUNCTIONS
@@ -85,7 +87,7 @@ def plot_centroids(num, save=False):
     img_mask = get_concat_h(image, mask)
     with sns.axes_style('dark'):
         fig, axes = plt.subplots(1, 1, figsize=set_size(
-            fraction=.6, aspect_ratio=IMAGES.shape[1]/(2*IMAGES.shape[2]), subplots=(1, 1)))
+            fraction=1, aspect_ratio=IMAGES.shape[1]/(2*IMAGES.shape[2]), subplots=(1, 1)))
     axes.set_xticks([])
     axes.set_yticks([])
 
@@ -168,7 +170,7 @@ def animate_centroids(save=False):
         plt.show()
 
 
-def plot_areas(width, save=False):
+def plot_areas(width, func,  save=False):
     '''
     Plots area of a droplet over time for consecutive time frames. Black dots represent one droplet, red crosses are for multiple
     droplets in the same frame and blue dots means no droplet is detected (area=0). Also, the detachment of droplets is shown in
@@ -195,8 +197,9 @@ def plot_areas(width, save=False):
         zero_id = []
         original_area_id, original_area = ([], [])
         for i, areas in enumerate(chunk):
+            i = i+OFFSET
             if len(areas) > 0:
-                original_area.append(sum(areas))
+                original_area.append(func(areas))
             else:
                 original_area.append(0)
             original_area_id.append(i+width*k)
@@ -211,20 +214,27 @@ def plot_areas(width, save=False):
                     else:
                         multi_id.append(i+width*k)
                         multi.append(area)
-        smooth_area = smooth_signal(np.array(original_area), 51)
+        # globular
+        smooth_area = smooth_signal(np.array(original_area), 41)
         peaks = find_peaks(-smooth_area, height=-5, prominence=2)[0]
-
-        axes.scatter(zero_id, np.zeros(len(zero_id)), s=7,
+        # spray
+        # smooth_area = smooth_signal(np.array(original_area), 7)
+        # peaks = find_peaks(smooth_area)[0]
+        # print(len(peaks))
+        # circ = Ellipse(xy=(9600, 5), height=10, width=300, fill=False,
+        #                color='k', linewidth=1)
+        # axes.add_artist(circ)
+        axes.scatter(zero_id, np.zeros(len(zero_id)), s=12,
                      marker='o', color='b', label='Zero droplets')
-        axes.scatter(single_id, single, s=7, marker='.',
+        axes.scatter(single_id, single, s=12, marker='.',
                      color='k', label='Single droplet')
-        axes.scatter(multi_id, multi, s=7, marker='x',
+        axes.scatter(multi_id, multi, s=9, marker='x',
                      color='r', label='Multiple droplets')
-        axvlines(xs=peaks+width*k, ax=axes, label='Detachment',
-                 linestyle='--', color='k')
+        axvlines(xs=peaks+width*k+OFFSET, ax=axes, label='Detachment',
+                 linestyle='--', color='k', alpha=0.6)
         axes.plot(original_area_id,
                   smooth_area, 'g-', label='Smoothed')
-        axes.legend()
+        # axes.legend()
         if save:
             fig.tight_layout()
             fig.savefig(os.path.join('Output', 'Plots', 'areas',
@@ -234,7 +244,7 @@ def plot_areas(width, save=False):
             plt.show()
 
 
-def animate_areas(width, save=False):
+def animate_areas(width, func, save=False):
     '''
     Animates area of a droplet over time for consecutive time frames. Black dots represent one droplet, red crosses are for multiple
     droplets in the same frame and blue dots means no droplet is detected (area=0). Also, the detachment of droplets is shown in
@@ -245,6 +255,7 @@ def animate_areas(width, save=False):
     Args:
     width {int} -- length of the time frames, e.g. a signal with length 100 animated with width 10 will refresh the animation
                    every 10 frames.
+    func {python function} -- Which function to use to reduce multiple values of area (e.g. max, sum, mean)
 
     Kwargs:
     save {bool} -- wether to save the animation as a .mp4 file or show it using plt.show().
@@ -271,11 +282,15 @@ def animate_areas(width, save=False):
     original_area = []
     for areas in AREAS:
         if len(areas) > 0:
-            original_area.append(sum(areas))
+            original_area.append(func(areas))
         else:
             original_area.append(0)
-    smooth_area = smooth_signal(np.array(original_area), 51)
-    peaks = find_peaks(-smooth_area, height=-5, prominence=2)
+    # globular
+    smooth_area = smooth_signal(np.array(original_area), 41)
+    peaks = find_peaks(-smooth_area, height=-5, prominence=2)[0]
+    # spray
+    # smooth_area = smooth_signal(np.array(original_area), 7)
+    # peaks = find_peaks(smooth_area)[0]
 
     def init():
         image_ax.set_data(np.zeros(IMAGES[0].shape))
@@ -298,7 +313,7 @@ def animate_areas(width, save=False):
                     ax0.plot(i, area, 'rx')
                 elif len(areas) == 1:
                     ax0.plot(i, area, 'k.')
-        if i in peaks[0]:
+        if i in peaks:
             ax0.axvline(x=i, color='k', alpha=0.4, linestyle='--')
         with sns.axes_style('dark'):
             image_ax.set_data(img)
@@ -313,7 +328,7 @@ def animate_areas(width, save=False):
         plt.show()
 
 
-def animate_areas_with_masks(width, save=False):
+def animate_areas_with_masks(width, func, save=False):
     '''
     Same as animate_areas() but includes the corresponding masks. Also displays the centroids.
 
@@ -380,11 +395,15 @@ def animate_areas_with_masks(width, save=False):
     original_area = []
     for areas in AREAS:
         if len(areas) > 0:
-            original_area.append(sum(areas))
+            original_area.append(func(areas))
         else:
             original_area.append(0)
-    smooth_area = smooth_signal(np.array(original_area), 51)
-    peaks = find_peaks(-smooth_area, height=-5, prominence=2)
+    # globular
+    # smooth_area = smooth_signal(np.array(original_area), 41)
+    # peaks = find_peaks(-smooth_area, height=-5, prominence=2)[0]
+    # spray
+    smooth_area = smooth_signal(np.array(original_area), 7)
+    peaks = find_peaks(smooth_area)[0]
 
     def animate(i):
         print(i)
@@ -422,7 +441,7 @@ def animate_areas_with_masks(width, save=False):
             single_droplet_2.set_data([], [])
             multi_droplet_1.set_data([], [])
             multi_droplet_2.set_data([], [])
-        if i in peaks[0]:
+        if i in peaks:
             ax0.axvline(x=i, color='k', alpha=0.4, linestyle='--')
         ax1.set_title(f'Frame {i}')
         return image_ax, mask_ax, single_droplet_1, multi_droplet_1, single_droplet_2, multi_droplet_2,
@@ -581,6 +600,29 @@ def plot_strip(num, save=False):
         plt.show()
 
 
+def plot_hanning(save=False):
+    '''
+    Shows a hanning window and a noisy sine wave smoothed by a hanning window through 1D convolution.
+    '''
+    window = hann(51)
+    fig, axes = plt.subplots(1, 2, figsize=set_size(aspect_ratio=.3))
+    axes[0].plot(window)
+    axes[0].set_ylabel('Amplitude')
+    axes[1].set_ylabel('Amplitude')
+    x_val = np.linspace(0, 8, 100)
+    y_val = np.abs(np.sin(x_val))
+    y_noise = y_val+np.random.randn(len(x_val))*0.1
+    y_smooth = smooth_signal(y_noise)
+    axes[1].plot(x_val, y_noise, label='Noisy signal')
+    axes[1].plot(x_val, y_smooth, label='Smoothed signal')
+    plt.legend()
+    if save:
+        latex_plot_config()
+        fig.savefig(os.path.join('Output', 'Plots', 'hanning.pgf'))
+    else:
+        plt.show()
+
+
 # %% MAIN
 if __name__ == "__main__":
-    animate_areas_with_masks(1000, True)
+    animate_areas(width=1000, func=sum, save=True)

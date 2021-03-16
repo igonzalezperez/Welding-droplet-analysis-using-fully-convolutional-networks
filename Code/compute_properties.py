@@ -19,9 +19,9 @@ P1 = 334*10 ^ (-6)  # period between frames in [s]
 P2 = 333*10 ^ (-6)
 
 ARCHITECTURE_NAME = 'unet'
-DATASET = 'Spray'
-N_FILTERS = 8
-BATCH_SIZE_TRAIN = 8
+DATASET = 'Globular'
+N_FILTERS = 32
+BATCH_SIZE_TRAIN = 16
 EPOCHS = 200
 PREDS_DIR = os.path.join('Output', 'Predictions',
                          f'{ARCHITECTURE_NAME.lower()}_{DATASET.lower()}_{N_FILTERS}_{BATCH_SIZE_TRAIN}_{EPOCHS}_preds.npz')
