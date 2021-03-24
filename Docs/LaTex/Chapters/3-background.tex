@@ -1,52 +1,105 @@
-\chapter{Background}
-In this chapter a theoretical background of the deep learning techniques used is given. For this, an overview of machine learning is given, detailing the problems it tackles and how this approach works in general. Furthermore, different types of Artificial Neural Networks (ANN) are described, namely fully connected networks, Convolutional Neural Networks (CNN) and Fully Convolutional Networks (FCN). 
+\chapter{Background}\label{chap:background}
 
-Additionally, the welding aspects of the problem are explained and previous work in that aspect is shown regarding the segmentation problem within welding research as well as the use of machine learning algorithms in the field.
+In this chapter the welding aspects of the problem are explained and previous work is shown regarding the segmentation problem within welding research as well as the use of machine learning algorithms in the field.
+
+Additionally, theoretical background of the deep learning techniques used is shown. For this, an overview of machine learning is given, detailing the problems it tackles and how this approach works in general. Furthermore, different types of Artificial Neural Networks (ANN) are described, namely fully connected networks, convolutional neural networks (CNN) and fully convolutional networks (FCN). 
+
+\section{Welding}
+
+In this thesis the focus is in Gas Metal Arc Welding (GMAW), a welding process in which a consumable electrode is melted by an electric arc. The zone has a shielding gas to prevent external effects in the joint. Figure \ref{fig:gmaw} shows a typical GMAW diagram.
+
+\begin{figure}
+    \centering
+    \includegraphics{Images/Background/gmaw.png}
+    \caption[Illustration of a GMAW process]{GMAW process illustration. Source: \textit{Fundamentals of modern manufacturing : materials, processes, and systems} \cite{grover}.}
+    \label{fig:gmaw}
+\end{figure}
+
+The quality of an arc welding operation is highly influenced by the transfer mode. Previous work in GMAW indicates that transfer mode affects weld penetration, weld width, recovery of alloying elements, fume emission, spatter, wetting among others \cite{lancaster, mendez2015}. Furthermore, stable and repeatable transfer modes are achieved by using the correct welding parameters \cite{zhang2}, hence it is important to gain knowledge about the welding dynamics to improve automatic welding systems.
+
+In this thesis, globular and spray transfer modes are considered. Globular transfer consists of large droplets that build up in the end of the consumable electrode until it detaches due to the size. This transfer mode is usually not desirable since it produces high heat, poor welding surfaces and spatter. Nonetheless, it is a cost effective mode because carbon dioxide is used as shielding gas which is cheaper than other gases such as argon. On the other hand, spray transfer uses higher voltage and current, producing a fast melting of the electrode, resulting in small droplets. This increases the quality of the weld and spatter is minimized.
+
+The analysis of welding image data can be useful to understand and design the process. Specifically, it is possible to measure kinematic and geometric properties which  can provide useful information when designing and optimizing a GMAW process as well as characterizing it. Furthermore, this can help to study mathematical descriptions of droplet flight and better development of automatic welding systems.
+
+\subsection{Previous work}
+
+The use of high speed video welding data has been explored before, using computer vision techniques that can detect the contour of objects within an image, with the aim of obtaining characteristic features of the metal droplets. 
+
+In \textit{Ray et al.} \cite{Ray} an active contour model, also known as \textit{snakes}, was used and was able to accurately outline the border of a droplet. This is a method for outlining an image object and it is widely used in object tracking, shape recognition and edge detection. It is an analytic method in which a set of seeded splines are moved in the image by minimizing an energy function which depends on features of the image, namely lines, edges and terminations; the energy minimum is reached when the points of the spline are able to outline the shapes in the image \cite{Kass} as shown in figure \ref{fig:snakes}.
+
+\begin{figure}
+\centering
+  \begin{subfigure}[b]{0.45\textwidth}
+    \includegraphics[width=\linewidth]{Images/Background/snake_a.png}
+    \caption{Snake seed}
+    \label{fig:snake_a}
+  \end{subfigure}
+\hfill
+  \begin{subfigure}[b]{0.45\textwidth}
+    \includegraphics[width=\linewidth]{Images/Background/snake_b.png}
+    \caption{Evolution of snake from the seed}
+    \label{fig:snake_b}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.45\textwidth}
+    \includegraphics[width=\linewidth]{Images/Background/snake_c.png}
+    \caption{Final evolved snake}
+    \label{fig:snake_c}
+  \end{subfigure}
+  \caption[Snake methodology application]{Snake methodology used in \textit{Ray et al.} \cite{Ray}}
+  \label{fig:snakes}
+\end{figure}
+
+Another case of GMAW droplet segmentation is in \textit{Zhai} \cite{Zhai} in which the problem is solved by using standard techniques of computer vision. Several image enhancement filters were applied to the image in a pipeline, such as grayscaling, thresholding, edge operators (Sobel operator, Laplacian of Gaussian operator, Canny operator among others) and histogram equalization in order to separate the droplet from the background. This approach has a different process for attached and detached droplets. 
+
+Furthermore, in the work of \textit{Wang} \cite{wang}, a similar approach to \textit{Zhai} \cite{Zhai} was used, that is applying successive filters to the images to get a proper segmentation. Then, location and size of the droplet were measured accurately.
+
+While the droplets were properly segmented in the examples mentioned above, this was done in a per image fashion, this means that to analyze thousands of images one would have to run the model thousands of times which is time consuming\footnote{In the work of \textit{Wang} \cite{wang} it is stated that the speed could be greatly improved by migrating from Matlab based code to C, but this is not done in the paper.}. Also, in \textit{Zhai} \cite{Zhai}, different models are needed for attached and detached droplets. Therefore it is necessary not only to properly segment, but to be able to process a large amount of images in a more general approach.
+
+Although deep learning techniques have been used in welding imaging problems, it has been mainly in a reinforcement learning approach to control the welding machine \textit{in situ} \cite{Gunther}. Similarly, neural networks have been used for defect detection using several sensors, this was achieved by the use of Convolutional Neural Networks to classify the input into one of different degrees of quality of the result, that is to say modes of failure \cite{Zhang}. Recently, deep learning has also been used for weld bead geometry prediction \cite{bead}.
+
+Nonetheless, to the best of the author's knowledge, segmentation problems have not been addressed with the use of deep learning techniques in the study of welding video data, which makes this thesis a novel approach to help solving a relevant problem in the field.
 
 \section{Machine Learning}
 
-Machine Learning is a field within Artificial Intelligence which aims to solve tasks automatically by learning patterns from data as opposed to hard-coding specific instructions. In an abstract way, the learning characteristic can be defined as follows \cite{Mitchell}: "A computer program is said to learn from experience E with respect to some class of tasks T and performance measure P, if its performance at tasks in T, as measured by P, improves with experience E."
+Machine Learning is a field within Artificial Intelligence which aims to solve tasks automatically by learning patterns from data as opposed to hard-coding specific instructions. In an abstract way, the learning characteristic can be defined as follows \cite{Mitchell}: “A computer program is said to learn from experience E with respect to some class of tasks T and performance measure P, if its performance at tasks in T, as measured by P, improves with experience E”.
 
-Furthermore, the task is what we want the computer to do, and it gets better at it by processing examples of said task. The examples are the input of the model, and usually come in the form of a vector $x \in \R^n$. For example if the input data are RGB images, then $x \in R^3$ and has dimensions $(width,\hspace{2pt} height, \hspace{2pt} channels)$ and each data point in $x$ is a pixel value. Another example is when each column of $x$ represents a specific feature relevant to the task.
+ The task (T) is what the computer has to do, and it gets better at it by processing examples of said task, in other words, gaining experience (E) in the task. The examples are the input of the model, and usually come in the form of a vector $x \in \R^n$. For example, if the input data are RGB images, then $x \in R^3$ and has dimensions $(width,\hspace{2pt} height, \hspace{2pt} channels)$ and each data point in $x$ is a pixel value. Another example is when each column of $x$ represents a specific feature relevant to the task.
 
 Typical machine learning tasks are the following:
 \begin{itemize}
     \item \textbf{Classification:} The task is to assign the input to a specific set of outputs by tuning the parameters of a function such that: $f: \R^n \xrightarrow{} \{1,\ldots, k\}$ where $k$ is the number of possible classes. An example of this is the handwritten digits problem \cite{MNIST}, in which an image of a handwritten digit is given and the output is which class ($\{0,\ldots,9\}$) the model is assigning to it. 
     \item \textbf{Regression:} In this case, the model's task is to learn a function $f: \R^n\xrightarrow{}\R$. The output is not a finite set of values, but a continuous value. Examples of this are when the task is to predict some physical measurement in the future with historical data like predicting tomorrow's temperature (continuous output) based on recent climate data trends.
     \item \textbf{Anomaly detection:} This case is similar to classification, since the task is to flag abnormal data from the rest.The difference lies in the fact that there is one class that is larger than the rest and sometimes the large class is the only class present in the training phase. This can be used to prevent fraudulent use of credit cards (abnormal data). 
-    \item \textbf{Denoising}: For this case the model learns to represent normal or baseline data, so that when a corrupted example is given, the model can reduce the nosie in the corrupted example.
+    \item \textbf{Denoising}: For this case the model learns to represent normal or baseline data, so that when a corrupted example is given, the model can reduce the noise in the corrupted example.
 \end{itemize}
 
-The performance measure (P) is important since it is the metric that the model will use to effectively learn from the given examples. In classification tasks, P can be the accuracy, that is how many correct predictions were made out of the total examples. In the case of regression it makes more sense to use a distance metric to measure how far away the predicted value is to the real value. In anomaly detection, since one class is way larger than the other, accuracy can be deceiving and other metrics are used such as the F1-score. However, choosing an appropriate metric is not always straightforward and it is important to understand the task to decide which metric would be more effective \cite{loss-survey}.
+The performance measure (P) is important since it is the metric that the model will use to effectively learn from the given examples. In classification tasks, P can be the accuracy, that is how many correct predictions were made out of the total examples. In the case of regression it makes more sense to use a distance metric to measure how far away the predicted value is from the real value. In anomaly detection, since one class is way larger than the other, accuracy can be deceiving and other metrics are used such as the F1-score. However, choosing an appropriate metric is not always straightforward and it is important to understand the task and the nature of the data to decide which metric would be more effective \cite{loss-survey}.
 
 Another important aspect is that the performance measure that matters is the one computed in new data, since training data has already been seen, it is expected that the error is going to be small when measured using that data, or at least smaller than in the unseen data. Because of that, datasets are usually split into training and testing sets.
 
 Finally, the experience (E) will also determine how to approach the problem. The type of data (experience) can be categorized as follows:
 \begin{itemize}
-    \item \textbf{Supervised learning:} The data consists of pairs $(x,y)$ in which $x$ is the input and $y$ is the correct output for $x$. In the handwritten digits examples, a data point would be $x$, an image with a hand drawn digit $n$, and $y$, the integer number $n$.
-    \item \textbf{Unsupervised learning:} In this case, no ground truth data is given, only the input $x$. This can be useful to explore the structure of the data itself by learning representations of it. Also it is used when one does not know how to categorize the data and lets the model cluster similar examples which can be useful when categorizing customer preferences for example.
+    \item \textbf{Supervised learning:} The data consists of pairs $(x,y)$ in which $x$ is the input and $y$ is the correct output for $x$. In the handwritten digits examples, a data point would be $x$, an image with a hand drawn digit $n\in \{0,\ldots,9\}$, and $y$, the integer number $n$.
+    \item \textbf{Unsupervised learning:} In this case, no ground truth data is given, only the input $x$. This can be useful to explore the structure of the data itself by learning representations of it. Also it is used when one does not know how to categorize the data and lets the model cluster similar examples which can be useful, for example, when categorizing customer preferences or categorizing texts.
     \item \textbf{Reinforcement learning:} In this case the data is constantly being fed to an agent that makes decisions based on the stream of data. This is used for optimal control purposes, in which the agent must react to different scenarios by changing its behavior such as in self-driving cars.
 \end{itemize}
 
-It is important to note that supervised learning is more "expensive" compared to unsupervised, since labels are not always available, and it is often the case that manual labels need to be made in order to train in a supervised approach, which can be slow when the data is large. Nonetheless, supervised learning allows to have more accurate results, since the exact\footnote{This will depend on the task at hand. Especially when manually labeling data, the ground truth can have bias of the scientist that is labeling. For example in image segmentation, in which the boundaries between subjects are not a clear pixel-wise separation.} result is given to the model, hence it is possible for the network to reach a high performance.
+It is important to note that supervised learning is more “expensive” compared to unsupervised, since labels are not always available, and it is often the case that manual labels need to be made in order to train in a supervised approach, which can be slow when the data is large. Nonetheless, supervised learning allows to have more accurate results, since the exact\footnote{This will depend on the task at hand. Especially when manually labeling data, the ground truth can have bias of the scientist that is labeling. For example in image segmentation, in which the boundaries between subjects are not a clear pixel-wise separation.} result is given to the model, hence it is possible for the network to reach a high performance.
 
 \section{Artificial Neural Networks}
 
 An Artificial Neural Network (ANN) is a mathematical model that learns a function $y = f(x;w)$ where $y$ is an output (prediction), $x$ is an input and $w$ are the parameters (or weights) of $f$. The network learns parameters $w$ such that $f\approx f^*$ where $f^*$ is the function that correctly maps input to output.
 
-These kinds of models are said to be layered since the function $f(x; w)$ is a composition of several non-linear transformations and each composition is thought of as a layer of the model. Then $f$ can be represented as 
-
-\begin{equation}
+These kinds of models are said to be layered since the function $f(x; w)$ is usually a composition of several non-linear transformations and each composition is thought of as a layer of the model. Then $f$ can be represented as 
+\begin{align}
     f(x;w) = f^{(n)}(f^{(n-1)}(\ldots f^{(2)} (f^{(1)}(x;w)))
     \label{eq:layers}
-\end{equation} 
-
-Thus, the data flows in a feedforward fashion from the first layer or input layer $f^{(1)}$ through the \textit{hidden} layers of the network until the last layer $f^{(n)}$ which is the output layer. The use of deeper composition chains is known as \textit{deep learning}.
+\end{align}
+Thus, the data flows in a feedforward fashion from the first layer or input layer $f^{(1)}$ through the \textit{hidden layers} of the network until the last layer $f^{(n)}$ which is the output layer. The use of deeper composition chains is known as \textit{deep learning}.
 
 In a supervised context, the model looks for a function $f(x) \approx f^*(x)$ where the training data is a noisy approximation of $f^*(x)$. The data consists in pairs $(x, y)$ where $y \approx f^*(x)$, so the input and output layers are determined, and the model tunes the parameters in the hidden layers in order to get an accurate output.
 
-The "neural" characteristic comes from a loose analogy to how biological neurons work, in which a sensory input is given, then a feedforward chain of neurons fire to propagate the information to the brain so that it can perceive and make sense of the input. Also, neurons have a trigger, namely an action potential which works by differences in voltage in order to be activated. In ANN these triggers are the activation functions which originally resembled this action potential behavior by using logistic functions in which extreme values tend to "collapse" to specific values, emulating the not triggered/triggered states.
-
+The “neural” characteristic comes from a loose analogy to how biological neurons work, in which a sensory input is given, then a feedforward chain of neurons fire to propagate the information to the brain so that it can perceive and make sense of the input. Also, neurons have a trigger, namely an action potential which works by differences in voltage in order to be activated. In ANN these triggers are the activation functions which originally resembled this action potential behavior by using logistic functions in which extreme values tend to “collapse” to specific values, emulating the not triggered/triggered states.
 
 \begin{figure}
   \begin{subfigure}[b]{0.4\textwidth}
@@ -63,45 +116,37 @@ The "neural" characteristic comes from a loose analogy to how biological neurons
   \caption[Illustration of a two layer fully connected neural network (a) and a neuron unit (b)]{A two layer neural network diagram is shown in (a). Nodes represent input (green), hidden (blue) and output (red) variables while links represent the weights between nodes in which a bias (gray) weight is added. In (b), the feed forward calculation is shown from a given layer $l$ to a neuron in the following layer. First computing the linear combination of inputs and then applying an activation function. }
 \end{figure}
 
-
-
-In figure \ref{fig:ann} is a simple ANN of two layers\footnote{The way of counting layers can be somewhat arbitrary, since one could include everything and consider a three layer network, or only include hidden layers, in which case the network has one layer. The convention here is to count the number of layer connections, since this reflects the parameters that the network will optimize. Hence, it is considered a two layer network.} is shown. This kind of network is called a dense or fully connected network, since every node in one layer is connected to every node in the next layer. In a given layer, each neuron will output an activation value to each of the neurons in the next layer through a linear combination of the inputs $x_i$ and the respective weights $w^l_{ji}$. Once the activations are computed, these are fed to a non-linear function producing the new values to be received by the next layer\footnote{In figure \ref{fig:feed_forward} $h(\cdot)$ is shown as single function, but in principle there could be many different functions. The indexes $h^{(l)}_n(\cdot)$ to indicate layer and neuron are omitted for simplicity.}. Then, in the first layer with $D$ neurons, the activations of the second layer are given by
-
-\begin{equation*}
+In figure \ref{fig:ann} is a simple ANN of two layers\footnote{The way of counting layers can be somewhat arbitrary, since one could include everything and consider a three layer network, or only include hidden layers, in which case the network has one layer. The convention here is to count the number of layer connections, since this reflects the parameters that the network will optimize. Hence, it is considered a two layer network.} is shown. This kind of network is called a dense or fully connected network, since every node in one layer is connected to every node in the next layer. In a given layer, each neuron will output an activation value to each of the neurons in the next layer through a linear combination of the inputs $x_i$ and the respective weights $w^l_{ji}$. Once the activations are calculated, these are fed to a non-linear activation function producing the new values to be received by the next layer\footnote{In figure \ref{fig:feed_forward}, $h(\cdot)$ is shown as single function, but in principle there could be many different functions. The indices $h^{(l)}_n(\cdot)$ that indicate layer (l) and neuron (n) are omitted for simplicity.}. Then, in the first layer with $D$ neurons, the activations of the second layer are given by
+\begin{align*}
     a_j = \sum^D_{i=1}w^{(1)}_{ji}x_i+w^{(1)}_{j0}, \quad j \in \{1,\ldots, M\}
-\end{equation*}
-
-where $M$ is the number of neurons in the second layer and $D$ is the number of neurons in the input layer. Also, the superscript $(1)$ indicates that the parameters are from the first layer. The parameters $w_{ji}$ are the weights connecting the neuron $j$ from the second layer and the neuron $i$ from the first layer. The parameters $w_{j0}$ are biases which serve as an offset to the activation. Later the activations are transformed using an activation function
-\begin{equation*}
+\end{align*}
+where $M$ is the number of neurons in the second layer and $D$ is the number of neurons in the input layer. Also, the superscript $(1)$ indicates that the parameters are from the first layer. The parameters $w_{ji}$ are the weights connecting the neuron $j$ from the second layer and the neuron $i$ from the first layer. The parameters $w_{j0}$ are biases which serve as an offset to the activation. Later, the activations are transformed using an activation function
+\begin{align*}
     z_j = h(a_j)
-\end{equation*}
+\end{align*}
 where $h(\cdot)$ is a nonlinear function such as the sigmoid or hyperbolic tangent.
 
 Conversely, the output layer can be computed from the previous layer as
-\begin{equation*}
+\begin{align*}
     a_k = \sum^M_{j=1}w^{(2)}_{kj}z_j+w^{(2)}_{k0}, \quad k \in \{1,\ldots, K\}
-\end{equation*}
-
+\end{align*}
 where $K$ is the number of outputs and $z_j$ are the results of the previous layer. Finally, the output activations must be transformed to map the type of the output data. In a regression problem no transformation is needed, so the identity function is used and $y_k = a_k$. In the case of classification it is necessary to use a function to cast the activations into specific classes
 \begin{align*}
     y_k &= \sigma (a_k)\\
     \sigma(a_k) &= \frac{e^{a_i}}{\sum^K_{j=1}e^{a_j}}
 \end{align*}
-where $\sigma(\cdot)$ is the \textit{softmax} function, a generalization of the sigmoid for the multiple class case and it measures the probability $p(C_i|x)$, the probability that the output belongs to class $C_i$,  where $i=1,\ldots, K$, given the input $x$.
+where $\sigma(\cdot)$ is the \textit{softmax} function, a generalization of the sigmoid for the multiple class case, and it measures the probability $p(C_i|x)$, the probability that the output belongs to class $C_i$,  where $i=1,\ldots, K$, given the input $x$.
 
 Then, the final output of the network can be expressed as 
-\begin{equation}
+\begin{align}
     y_k(\mathbf{x},\mathbf{W}) = \underbrace{\sigma_k \left(\sum^M_{j=1}w^{(2)}_{kj}\underbrace{h\left(\sum^D_{i=1}w^{(1)}_{ji}x_i+w^{(1)}_{j0}\right)}_{f^{(1)}(x)}+w^{(2)}_{k0}\right)}_{f^{(2)}(f^{(1)}(x))}, \quad k \in \{1,\ldots, K\}
     \label{eq:neural_net}
-\end{equation}
-
+\end{align}
 and by using matrix notation we get the more compact version
-
 \begin{align*}
     \mathbf{z}^{(1)} &= h^{(1)}\left(\mathbf{W}^{(1)T}\mathbf{x} + \mathbf{b}^{(1)}\right) \\
     \mathbf{y}(\mathbf{x},\mathbf{W})&= \sigma\left(\mathbf{W}^{(2)T}\mathbf{z}^{(1)} + \mathbf{b}^{(2)}\right)
 \end{align*}
-
 In equation \eqref{eq:neural_net} it can be seen more explicitly the relationship with the abstract form of expression \eqref{eq:layers} in which the composition of functions represents the layered structure. Furthermore, deeper architectures can be made simply by adding further compositions of the functions representing each layer. In general, a fully connected neural network of $L$ layers can be expressed as
 \begin{align*}
     \mathbf{z}^{(1)} &= h^{(1)}\left(\mathbf{W}^{(1)T}\mathbf{x} + \mathbf{b}^{(1)}\right) \\
@@ -110,19 +155,17 @@ In equation \eqref{eq:neural_net} it can be seen more explicitly the relationshi
 \end{align*}
 where each equation represents input layer, hidden layers and output layer respectively.
 
-
 \subsection{Activation functions}
+
 An important aspect of the neural network's architecture is that it needs to have a non-linear transformation to be able to approximate functions that can be extremely complex \cite{Hornik, Cybenko}. The most commonly used activation functions are the rectified linear unit (ReLU), leaky ReLU, sigmoid and hyperbolic tangent. These functions are shown in figure \ref{fig:activations}. In practice, the most used are the ReLU and leaky ReLU because the derivative of the sigmoid and hyperbolic tangent tends to zero on the edges, which means that the deeper the network, the closer the gradients are to zero and then it is not possible to update the weights since gradient computation is a fundamental step to optimize the weights. This is known as the vanishing gradients problem and is especially present when using deep learning models \cite{vanishing-gradient, Hinton2010}.
 
 These functions are defined as
-
 \begin{align*}
     sigmoid(x)=\sigma(x) &= \frac{1}{1+e^{-x}} \\
     tanh(x) &= \frac{e^x-e^{-x}}{e^x+e^{-x}} \\
     ReLU(x) &= max(0,x)\\
     LeakyReLU(x) &= max(\alpha x, x),\quad 0<\alpha < 1
 \end{align*}
-
 \begin{figure}
     \centering
     \input{Graphs/activations}
@@ -134,11 +177,9 @@ These functions are defined as
 In the previous sections the way in which the network computes an output from a given input has been shown. However, for the network to be useful it is necessary to tune the weights so that the model can accurately make predictions. This process of tweaking parameters is called the training phase. A dataset is usually split into at least two groups: training set and testing set. So that the model can optimize parameters by receiving the training data and then using the testing data to measure some performance metric, thus measuring how good the model is at generalization.
 
 In the training phase, it is necessary to optimize the weights such that some error function\footnote{Also called loss or cost function.} is the smallest possible. That is solving the problem 
-
-\begin{equation*}
+\begin{align*}
     \mathbf{W}^*=\underset{\mathbf{W}}{arg\,min}\:E(\mathbf{W};\mathbf{X})
-\end{equation*}
-
+\end{align*}
 Although it is possible in theory to solve the minimization problem by calculating the gradient of $E(\cdot)$ analytically and then solving for $\nabla E(\mathbf{W};\mathbf{X})=0$, it is often too computationally expensive, and iterative methods are preferred. 
 
 In order to achieve this iterative minimization, the \textit{backpropagation} algorithm is used which efficiently computes the gradient of an error function with respect to the weights of the network for an input-output example. Since the error is calculated in the last layer, after the feedforward pass, the gradient is calculated backwards, from the output layer to the input layer, propagating the error using the chain rule at each layer. A more detailed discussion of the backpropagation algorithm can be found in \textit{Goodfellow} and \textit{Bishop} \cite{dl-book, bishop}.
@@ -146,31 +187,27 @@ In order to achieve this iterative minimization, the \textit{backpropagation} al
 After backpropagation it is possible to use optimization methods to find weights that minimize the error $E(\cdot)$. One way to solve this problem is to use gradient descent methods. Specifically, the Stochastic Gradient Descent (SGD) method is a common approach. In SGD, weights are initialized randomly, then each iteration tunes the weights such that the value of the error is updated in the opposite direction of the gradient, thus reducing its value.
 
 If the weight matrix is $\mathbf{W} \in \R^P$, then the partial derivatives of $E(\cdot)$ are
-
 \begin{align*}
     \frac{\partial E}{\partial \mathbf{W}}=\left[\frac{\partial E}{\partial w_1}, \ldots, \frac{\partial E}{\partial w_P}\right]^T
 \end{align*}
- 
 subsequently, the weights are updated as follows
-
 \begin{align}
     w_i \xrightarrow{} w_i - \alpha \frac{\partial E}{\partial w_i},\quad \forall i \in \{1,\ldots, P\} 
     \label{eq:sgd}
 \end{align}
-where $\alpha$ is the learning rate, which determines how large the steps are between iterations. A smaller value will produce a slower but more accurate algorithm. Conversely, a larger learning rate will increase speed, but minimums are harder to find. The weights are updated until the error is close to zero by using some tolerance measure.
+where $\alpha$ is the learning rate, which determines how large the steps are between iterations. A smaller value will produce a slower but more accurate algorithm. Conversely, a larger learning rate will increase speed, but minima are harder to find. The weights are updated until the error is close to zero by using some tolerance measure.
 
 Equation \eqref{eq:sgd} implies that a single pair $(x,y)$ is processed by the network, this is often not optimal because datasets can have a large number of data points, so a variant of SGD is used called mini-batch gradient descent in which the data is split into many small bacthes and the gradient descent is done over the average of the gradients within the batch. Finally, the updating rule for a batch is
-
 \begin{align*}
     w_i \xrightarrow{} w_i - \frac{\alpha}{N} \sum_{j=0}^N\frac{\partial E_j}{\partial w_i},\quad \forall i \in \{1,\ldots, P\} 
 \end{align*}
+where the sum is done over all the examples in the batch. Furthermore, there are many optimizers aside from SGD which incorporate more levels of sophistication such as using momentum or decaying learning rate. Some of them are AdaGrad, Adadelta and Adam, the latter being particularly common.
 
-where the sum is done over all the examples in the batch.
+Then, to optimize the network this process needs to be repeated for a number of epochs that yields good results. An epoch is defined as the number of times the model has processed the training data, since it is usually necessary to process the training data many times before achieving acceptable results.
 
-Then, to optimize the network this process needs to be repeated for a number of epochs that yields good results. An epoch is defined as the number of times the model has processed the training data, since it is usually necessary to process the training data many times before achieving acceptable results. 
 \subsection{Regularization}
 
-An important trade-off when training neural network is underfitting/overfitting. Briefly, these concepts convey the idea of how much does the network learn specifically the training data as opposed to generalizing to unseen data. Underfitting means that the network lacks the ability to perform well in the task, but has similar results both in training data as well as testing data. On the other hand, overfitting occurs when the model is too complex and it is able to have really good results in training data but at the cost of not being able to generalize, thus yielding bad results when testing. In figure \ref{fig:overfit} an illustration of the underfitting/overfitting phenomena is shown.
+An important trade-off when training neural network is underfitting-overfitting. Briefly, these concepts convey the idea of how much does the network learn specifically the training data as opposed to generalizing to unseen data. Underfitting means that the network lacks the ability to perform well in the task, but has similar results both in training data as well as testing data. On the other hand, overfitting occurs when the model is too complex and it is able to have really good results in training data but at the cost of not being able to generalize, thus yielding bad results when testing. In figure \ref{fig:overfit} an illustration of the underfitting-overfitting phenomena is shown.
 
 In general, overfitting is more common in deep learning because the models are usually large and contain millions of parameters. The techniques used to address these problems are referred to as regularization techniques.
 
@@ -183,24 +220,22 @@ In general, overfitting is more common in deep learning because the models are u
    \label{fig:overfit}
 \end{figure}
 
-A widely used technique to prevent overfitting when dealing with complex models is to use dropout, which at every step gives each neuron a probability of being "turned off". Then, the network can be complex enough but it cannot "memorize" the training examples because the weights needed to produce each output are not the same. Figure \ref{fig:dropout} shows how dropout works.
-
+A widely used technique to prevent overfitting when dealing with complex models is to use dropout, which at every step gives each neuron a probability of being “turned off”. Then, the network can be complex enough but it cannot “memorize” the training examples because the weights needed to produce each output are not the same. Figure \ref{fig:dropout} shows how dropout works.
 
 \begin{figure}
     \centering
     \resizebox{\linewidth}{!}{
     \input{Graphs/dropout}
     }
-    \caption[Illustration of the dropout technique with $p=0.5$]{Illustration of the dropout technique with $p=0.5$. At every forward pass of the network, neurons have a probability $p=0.5$ of being "turned off" and no values are propagated through them.}
+    \caption[Illustration of the dropout technique with $p=0.5$]{Illustration of the dropout technique with $p=0.5$. At every forward pass of the network, neurons have a probability $p=0.5$ of being “turned off” and no values are propagated through them.}
    \label{fig:dropout}
 \end{figure}
-
 
 Furthermore, the \textit{hyperparameters} of the network need to be optimized too. Hyperparameters are any parameters that are not the network's weights such as learning rate, number of epochs, number of layers, among many others. These are not optimized when training the network and therefore they must be set by the scientist, usually through some heuristic. A common approach to do this is to use a grid search in which different values for each hyperparameter are set and then the network is trained using all of the possible hyperparameters' combinations. Then, results between each point in the grid are compared and the best one is chosen.
 
 As stated earlier, the data used is split into training and testing where the testing portion should not be used to tune any parameter because that can cause the model to overfit the testing data instead of being able to generalize previous information to unseen examples. Since the hyperparameters need to be tuned as well as the network's weights, the training set is subdivided into training and validation, where training is to tune the network's weights while the validation set can be used to optimize hyperparameters.
 
-\begin{figure}[h]
+\begin{figure}
     \centering
     \resizebox{.85\textwidth}{!}{
     \includegraphics{Images/Background/kfold.pdf}
@@ -210,15 +245,15 @@ As stated earlier, the data used is split into training and testing where the te
 
 Moreover, a common practice to ensure a robust model is to use \textit{$k$-fold cross validation}. This is to subdivide the training set into $k$ subsamples where one is for validation and the rest $k-1$ subsamples are for actual training. Then, the model is run over all the splits every time taking a different one for validation to finally take an average of each run. These averages can then be used to compare other models in a statistically validated way. In figure \ref{fig:kfold} a diagram of the $k$-fold cross validation process is shown.
 
-Finally, an additional measure to prevent overfitting is the use of early stopping. Since the model has to run a number of epochs to be determined, it is possible that up to certain number of epochs the model stops improving. Hence, early stopping consists in setting a maximum number of epochs $M$ to run as well as a patience parameter $P$, which is the number of consecutive epochs that the model will check for improvement, stopping the process if validation loss does not improve in $P$ consecutive epochs. 
+Finally, an additional measure to prevent overfitting is the use of early stopping. Since the model has to run a number of epochs to be determined, it is possible that up to a certain number of epochs the model stops improving. Notice that a halt in improvement does not necessarily mean that the training loss does not improve, rather, it could be the case that the training set is performing better at each epoch but the validation gets worse which is a clear sign of overfitting. Hence, early stopping consists of setting a maximum number of epochs $M$ as well as a patience parameter $P$, which is the number of consecutive epochs that the model will check for improvement, stopping the process if validation loss does not improve in $P$ consecutive epochs. 
 
 \section{Convolutional Neural Networks}
 
-Convolutional Neural Networks (CNN) are a type of ANN that has been used widely when dealing with grid-like data. These kinds of networks work just as a regular ANN by receiving an input, performing a matrix operation with learnable weights and biases and applying a non-linear activation. The difference lies in that CNN make use of the spatial relationships of the input which would be lost if the input were flattened to use a fully connected layer.
+Convolutional Neural Networks (CNN) are a type of ANN that has been used widely when dealing with grid-like data. These kinds of networks work just as a regular ANN in the sense that they receive an input, perform a matrix operation with learnable weights and biases and then apply a non-linear activation. The difference lies in that CNN make use of the spatial relationships of the input which would be lost if the input were flattened to use a fully connected layer.
 
 In figure \ref{fig:cnn} a typical CNN architecture is shown. Three distinctive parts can be identified: 
 
-\begin{figure}[h]
+\begin{figure}
 	\centering
 	\input{Graphs/cnn}
 	\caption[Architecture of a convolutional neural network]{Diagram of a CNN. The input is expected to have a grid-like structure.  The architecture consists of two convolutional blocks which include a convolutional and pooling layer. After the subsequent convolutional blocks, a fully connected layer is used to finally produce the output. Source: \url{https://davidstutz.de/illustrating-convolutional-neural-networks-in-latex-with-tikz/} \cite{conv-graphs}.}
@@ -226,24 +261,21 @@ In figure \ref{fig:cnn} a typical CNN architecture is shown. Three distinctive p
 \end{figure}
 
 \begin{itemize}
-    \item \textbf{Convolutional layer:} This layer performs a convolution operation between the input and a kernel\footnote{Also called filter.} with weights that the network can learn, these kernels have a width and height that define the window of the convolution and depth which defines the number of different outputs of the operation. The transformed data from the convolution process is called a feature map. Specifically, figure \ref{fig:filters} shows that a number of kernels is defined, as one would define the number of neurons in a fully connected layer. These kernels have a fixed size and slide through the input image or feature map and perform a convolution. After the convolution is done, an activation function is applied such as a ReLU, as in dense ANN.
+    \item \textbf{Convolutional layer:} This layer performs a convolution operation between the input and a kernel\footnote{Also called filter.} with weights that the network can learn, these kernels have a width and height that define the window of the convolution and depth which defines the number of different outputs of the operation. The transformed data from the convolution process is called a feature map. Specifically, figure \ref{fig:filters} shows that a number of kernels is defined, as one would define the number of neurons in a fully connected layer. These kernels have a fixed size and slide through the input image or feature map and perform a convolution operation. After the convolution is done, an activation function is applied such as a ReLU, as in a regular ANN.
     
-    The one dimensional convolution is formally defined as
+    The one dimensional convolution is defined as
     \begin{align*}
         s(t) = (x *w)(t)=\int x(\tau)w(t-\tau)d\tau
     \end{align*}
-    
     In the context of CNN, $s(t)$ is the resulting feature map, the input is $x$ and the kernel is $w$. In practice, the input is a multidimensional array of data points, so a discrete convolution is used
-    
     \begin{align*}
         s(t) = (x *w)(t)=\sum_{a=-\infty}^\infty x(a)w(t-a)
     \end{align*}
-    
     It is assumed that these functions are zero in all their domain except for the actual values of the data, so the infinite sum can be computed. Furthermore, it is common to process image-like data and kernels, so a 2D version is defined as
     \begin{align*}
         S(i,j)=(I * K)(i,j)=\sum_{m}\sum_{n} I(i+m,j+n)K(m,n)
     \end{align*}
-    This is called \textit{cross-correlation} and is equivalent to the convolution operation except that it is non-commutative, $S(i,j) = (I*K)(i,j)\neq (K*I) (i,j) $, but this is not an issue when implementing the network as long as the application is consistent. Figure \ref{fig:2dconv-ex} shows how this works in practice for a $2D$ input and a $3\times 3$ kernel.
+    This is called \textit{cross-correlation} and is equivalent to the convolution operation except that it is non-commutative, $S(i,j) = (I*K)(i,j)\neq (K*I) (i,j) $, but this is not an issue when implementing the network as long as the application is consistent. Figure \ref{fig:2dconv-ex} shows how this works in practice for a $2D$ input and a $3\times 3$ kernel.\\
     
     \begin{figure}
         \centering
@@ -281,19 +313,14 @@ In figure \ref{fig:cnn} a typical CNN architecture is shown. Three distinctive p
     \end{figure}
 
     Furthermore, it is useful to define the input size ($i_j$), kernel size ($k_j$), stride size ($s_j$) and padding size ($p_j$) where each parameter is considered along axis $j$\footnote{In the case of square input, strides and padding this distinction is not necessary.}. Then, a general expression \cite{trans-conv} for the output shape is
-    
     \begin{align*}
         o_j &= \left\lfloor \frac{i_j+2p_j-k_j}{s_j}, \right\rfloor+1 \quad \forall i,k,s,p \in \N
     \end{align*}
 
-    \item \textbf{Pooling layer:} The pooling layer downsamples the previously convolved input, thus reducing the dimension of the data. A commonly used type of pooling layer is the max pooling, in which a window slides through the data and takes the maximum value within the window. The way it works is very similar to a convolution in the sense that a kernel size is defined, and this kernel scans the input and applies a transformation at each step. The difference is that the transformation is not a convolution, but the downsampling by the use of some statistical feature within the window (average, maximum, etc). A diagram of a pooling layer is shown in \ref{fig:maxpool}. Similar to the convolution, the kernel size and strides affect the size of the downsampled output. An expression for the output size is\footnote{Axis subindex is omitted for simplicity.} 
-
+    \item \textbf{Pooling layer:} The pooling layer downsamples the previously convolved input, i.e. feature maps, thus reducing the dimension of the data. A commonly used type of pooling layer is the max pooling, in which a window slides through the data and takes the maximum value within the window. The way it works is very similar to a convolution in the sense that a kernel size is defined, and this kernel scans the input and applies a transformation at each step. The difference is that the transformation is not a convolution, but a downsample through the use of some statistical feature within the window (average, maximum, etc). A diagram of a pooling layer is shown in \ref{fig:maxpool}. Similar to the convolution, the kernel size and strides affect the size of the downsampled output. An expression for the output size is\footnote{Axis subindex is omitted for simplicity.} 
     \begin{align*}
         o &= \left\lfloor \frac{i-k}{s}+1, \right\rfloor+1 \quad \forall i,k,s \in \N
     \end{align*}
-    
-   
-    
     \begin{figure}
 	\centering
 	\input{Graphs/maxpool}
@@ -312,7 +339,7 @@ Furthermore, CNN have properties that benefit their application \cite{cnn-survey
 \end{itemize}
 
 \section{Segmentation models}
-An important problem in computer vision is the analysis of images or videos for segmentation and it has been addressed using different techniques including deep learning models which are discussed in this section.
+An important problem in computer vision is the analysis of images or videos for segmentation and it has been addressed using different techniques, including deep learning models which are discussed in this section.
 
 First, the segmentation task encompasses several different but related problems. The most common are: 
 \begin{itemize}
@@ -353,16 +380,17 @@ In figure \ref{fig:segment-types} the different types of segmentation are depict
 \end{figure}
 
 \subsection{Fully convolutional networks}
+
 Fully Convolutional Networks (FCN) are ANN that only make use of convolutional and pooling layers. This type of architecture is suitable for semantic segmentation because it is possible to have a grid-like output, as opposed to a single value or array of values when fully connected layers are used in the output layer. As stated before, in semantic segmentation it is necessary to assign a label to each pixel in an image to generate groups of pixels that have some semantic or spatial relationship.
 
-A generic FCN architecture is shown in figure \ref{fig:fcn}. The structure is composed of a contracting convolutional path in which subsequent convolutional and pooling layers are applied so the number of feature maps increases and the size of the input decreases (width and height). Then there is an expanding path in which transposed convolutions\footnote{The term “deconvolution” is sometimes used in the literature, but this is discouraged because a deconvolution is mathematically defined as the inverse of a convolution, which is different from a transposed convolution \cite{trans-conv}.} are applied and followed by regular convolutions that reduce the number of feature maps. The purpose of transposed convolutions is to upsample the feature maps so the original input shape is recovered. The output is the segmentation map which is an image of the same shape as the input and each pixel has a specific label. In a supervised approach, these labels come from whatever labels have been assigned to the training examples. 
+A generic FCN architecture is shown in figure \ref{fig:fcn}. The structure is composed of a contracting convolutional path in which subsequent convolutional and pooling layers are applied so the number of feature maps increases (depth) and the size of the input decreases (width and height). Then there is an expanding path in which transposed convolutions\footnote{The term “deconvolution” is sometimes used, but this is discouraged because a deconvolution is defined as the inverse of a convolution, which is different from a transposed convolution \cite{trans-conv}.} are applied and followed by regular convolutions that reduce the number of feature maps. The purpose of transposed convolutions is to upsample the feature maps so the original input shape is recovered. The output is the segmentation map which is an image of the same shape as the input and each pixel has a specific label. In a supervised approach, these labels come from whatever labels have been assigned to the training examples. 
 
 \begin{figure}
 	\centering
 	\noindent\resizebox{\textwidth}{!}{
 	\input{Graphs/fcn}
 	}
-	\caption[Illustration of a fully convolutional network]{Illustration of a FCN. First, subsequent convolution and pooling layers are applied. In the convolutions the feature maps are added (more depth in the figure) while maintaining height and width, then the pooling layer reduces the size while keeping the same number of feature maps. In the expanding path, a transposed convolution is applied which upsamples the feature maps, then a normal convolution is applied reducing the number of feature maps. Source: Adapted from \url{https://github.com/jettan/tikz_cnn}.}
+	\caption[Illustration of a fully convolutional network]{Illustration of a FCN. First, subsequent convolution and pooling layers are applied. In the convolutions the feature maps are added (more length in the figure) while maintaining height and width, then the pooling layer reduces the size while keeping the same number of feature maps. In the expanding path, a transposed convolution is applied which upsamples the feature maps, then a normal convolution is applied reducing the number of feature maps. Source: Adapted from \url{https://github.com/jettan/tikz_cnn}.}
 	\label{fig:fcn}
 \end{figure}
 
@@ -372,10 +400,8 @@ The main feature of a FCN is the upsampling layer in which the transposed convol
 The transposed convolution operation functions in the opposite way of a pooling layer, thus upsampling the input. For this, a kernel with trainable parameters is used. Note that since this is not the inverse of a convolution, the result is just a new collection of feature maps that recovers the shape of the previous layer, but does not have the same parameter values.
 
 As an example, let us consider the convolution shown in figure \ref{fig:no_padding_no_strides}. If we write the convolution as a vector-matrix multiplication, the kernel can be written as
-
 \setcounter{MaxMatrixCols}{20}
-
-\begin{equation*}
+\begin{align*}
 \resizebox{.98\hsize}{!}{$
    \mathbf{C} =\begin{pmatrix}
     w_{0,0} & w_{0,1} & w_{0,2} & 0       & w_{1,0} & w_{1,1} & w_{1,2} & 0       &
@@ -387,12 +413,12 @@ As an example, let us consider the convolution shown in figure \ref{fig:no_paddi
     0       & 0       & 0       & 0       & 0       & w_{0,0} & w_{0,1} & w_{0,2} &
     0       & w_{1,0} & w_{1,1} & w_{1,2} & 0       & w_{2,0} & w_{2,1} & w_{2,2} \\
     \end{pmatrix}$}
-\end{equation*}
+\end{align*}
 where $w_{ij}$ is the weight of the kernel located in row $i$ and column $j$. Then, the convolution can be computed by flattening the input so that it becomes a $16-$dimensional vector. The result is going to be a $4-$dimensional vector which can be reshaped to $2\times2$ to get the matrix form. With this in mind, notice that in the forward pass, the convolution consists in multiplying by $\mathbf{C}$ while in the backward pass to propagate the error it is necessary to multiply by $\mathbf{C}^T$. Hence, the weight matrix defines both the forward and backward pass of the network.
 
 Now consider the idea behind transposed convolution which is to take a small matrix, applying a transformation and obtaining a larger matrix maintaining the number of feature maps. This is precisely what happens when in the backward pass $\mathbf{C}^T$ is applied. Then, multiplying by $\mathbf{C}^T$ is a transposed convolution by definition if $\mathbf{C}^T$ is applied in the forward pass instead of the backward pass.
 
-In general, the process can be thought of as having an input matrix in which every data point is multiplied by the kernel and the summed over the corresponding values. This is equivalent\footnote{This is useful as a concept, but is not used when programming because many of the operations are useless zero multiplications.} to a regular convolution over a fully padded input\footnote{This means the input is padded such that the kernel can overlap its last value (bottom-right) with the first of the input (top-left).} as shown in figure \ref{fig:no_padding_no_strides_transposed} which is a $2\times 2$ input in which a transposed convolution is applied with a $3\times 3$ kernel to produce a $4\times 4$ output or equivalently, a $6 \times 6$ (padded) input convolved with a $3\times 3$ kernel.
+In general, the process can be thought of as having an input matrix in which every data point is multiplied by the kernel and then summed over the corresponding values. This is equivalent\footnote{This is useful as a concept, but is not used when programming because many of the operations are useless zero multiplications.} to a regular convolution over a fully padded input\footnote{This means the input is padded such that the kernel can overlap its last value (bottom-right) with the first of the input (top-left).} as shown in figure \ref{fig:no_padding_no_strides_transposed} which is a $2\times 2$ input in which a transposed convolution is applied with a $3\times 3$ kernel to produce a $4\times 4$ output or equivalently, a $6 \times 6$ (padded) input convolved with a $3\times 3$ kernel.
 
 \begin{figure}
     \centering
@@ -408,70 +434,15 @@ In general, the process can be thought of as having an input matrix in which eve
 
 As of now, the networks discussed have all been connected using adjacent layers which means every node in one layer is connected with every node in the next layer, no connections are missing and no connections with other layers are added. Nonetheless, a trick that has proven to be very effective when training ANN is the use of residual connections, allowing to achieve state of the art results in a wide range of tasks. These connections consist in having a connection with deeper layers of the network, so a neuron $n$ in layer $l$ can be connected with layer $l+1$ as usual and with other layers $l+r$, $r\geq 1$.
 
-Before residual connections were developed, some deep networks performed worse than shallow ones despite the fact that in theory neural networks are universal approximators \cite{Hornik, Cybenko}, which means that it is possible to approximate any function in a compact domain given enough neural units with an arbitrary small error. Particularly, there was a saturation in accuracy, that is the accuracy improved with depth up to a certain point at which accuracy started to decrease. This is called the degradation problem \cite{res-connection}.
+Before residual connections were developed, some deep networks performed worse than shallow ones despite the fact that in theory neural networks are universal approximators \cite{Hornik, Cybenko}, which means that it is possible to approximate any function in a compact domain with an arbitrary small error given enough neural units. Particularly, there was a saturation in accuracy, that is the accuracy improved with depth up to a certain point at which accuracy began to decrease. This is called the degradation problem \cite{res-connection}.
 
 Specifically when a shallow network performs better than a deep one, an intuitive approach would be to allow the deep network to skip some layers so that it can mimic the behavior of a shallow network if needed. Then, if a layer activation is small, an identity mapping can be added so that the gradient does not vanish and the network can make use of that layer's level of abstraction. In figure \ref{fig:res-connection} a residual connection is shown. 
 
 \begin{figure}
     \centering
     \input{Graphs/res_connection}
-
     \caption[Residual connection diagram]{Residual connection diagram. Source: Adapted from \textit{Deep residual learning for image recognition} \cite{res-connection}.}
     \label{fig:res-connection}
 \end{figure}
 
-In the context of FCN, these residual connections are called \textit{skip layers}, which also skip connections to further layers in the network, but do so by concatenating layers as opposed to the sum shown in \ref{fig:res-connection}. On a semantic level, what the network does when convolving and pooling is extracting more abstract representations of the input. Then, what the skip layers do is recover the layers' less abstract information which is the context needed to reconstruct when upsampling \cite{Ronneberger}.
-
-\section{Welding}
-In this thesis the focus is in Gas Metal Arc Welding (GMAW), a welding process in which a consumable electrode is melted by an electric arc. The zone has a shielding gas to prevent external effects in the joint. Figure \ref{fig:gmaw} shows a typical GMAW diagram.
-
-\begin{figure}
-    \centering
-    \includegraphics{Images/Background/gmaw.png}
-    \caption[Illustration of a GMAW process]{Illustration of a GMAW process. Source: \textit{Fundamentals of modern manufacturing : materials, processes, and systems} \cite{grover}.}
-    \label{fig:gmaw}
-\end{figure}
-
-The quality of an arc welding operation is highly influenced by the transfer mode. Previous work in GMAW indicates that transfer mode affects weld penetration, weld width, recovery of alloying elements, fume emission, spatter, wetting among others \cite{lancaster, mendez2015}. Furthermore, stable and repeatable transfer modes are achieved by using the correct welding parameters \cite{zhang2}, hence it is important to gain knowledge about the welding dynamics to improve automatic welding systems.
-
-In this thesis, globular and spray transfer modes are considered. Globular transfer consists of large droplets that build up in the end of the consumable electrode until it detaches due to the size. This transfer mode is usually not desirable since it produces high heat, poor welding surfaces and spatter. Nonetheless, it is a cost effective mode because carbon dioxide is used as shielding was which is cheaper than other gases such as argon. On the other hand, spray transfer uses higher voltage and current, producing a fast melting of the electrode, resulting in small droplets. This increases the quality of the weld and spatter is minimized.
-
-The analysis of welding image data can be useful to understand and design the process. Specifically, it is possible to measure kinematic and geometric properties which  can give a way to investigate those properties. Furthermore, this can help to study mathematical descriptions of droplet flight and better development of automatic welding systems.
-\subsection{Previous work}
-
-
-The use of high speed video welding data has been explored before, using computer vision techniques that can detect the contour of objects within an image, with the aim of obtaining characteristic features of the metal droplets. 
-
-In \textit{Ray et al.} \cite{Ray} an active contour model, also known as \textit{snakes}, was used and was able to accurately outline the border of a droplet. This is a method for outlining an image object and it is widely used in object tracking, shape recognition and edge detection. It is an analytic method in which a set of seeded splines are moved in the image by minimizing an energy function which depends on features of the image, namely lines, edges and terminations; the energy minimum is reached when the points of the spline are able to outline the shapes in the image \cite{Kass} as shown in figure \ref{fig:snakes}.
-
-\begin{figure}
-\centering
-  \begin{subfigure}[b]{0.45\textwidth}
-    \includegraphics[width=\linewidth]{Images/Background/snake_a.png}
-    \caption{Snake seed}
-    \label{fig:snake_a}
-  \end{subfigure}
-\hfill
-  \begin{subfigure}[b]{0.45\textwidth}
-    \includegraphics[width=\linewidth]{Images/Background/snake_b.png}
-    \caption{Evolution of snake from the seed}
-    \label{fig:snake_b}
-  \end{subfigure}
-  \begin{subfigure}[b]{0.45\textwidth}
-    \includegraphics[width=\linewidth]{Images/Background/snake_c.png}
-    \caption{Final evolved snake}
-    \label{fig:snake_c}
-  \end{subfigure}
-  \caption[Snake methodology application]{Snake methodology used in \textit{Ray et al.} \cite{Ray}}
-  \label{fig:snakes}
-\end{figure}
-
-Another case of GMAW droplet segmentation is in \textit{Zhai} \cite{Zhai} in which the problem is solved by using standard techniques of computer vision. Several image enhancement filters were applied to the image in a pipeline, such as grayscaling, thresholding, edge operators (Sobel operator, Laplacian of Gaussian operator, Canny operator among others) and histogram equalization in order to separate the droplet from the background. This approach has a different process for attached and detached droplets. 
-
-Furthermore, in the work of \textit{Wang} \cite{wang}, a similar approach to \textit{Zhai} \cite{Zhai} was used, that is applying successive filters to the images to get a proper segmentation. Then, location and size of the droplet were measured accurately.
-
-While the droplets were properly segmented in the examples mentioned above, this was done in a per image fashion, this means that to analyze the thousands of images one would have to run the model thousands of times which is time consuming\footnote{In the work of \textit{Wang} \cite{wang} it is stated that the speed could be greatly improved by migrating from Matlab based code to C, but this is not done in the paper.}, also in \cite{Zhai} different models are needed for attached and detached droplets. Therefore it is necessary not only to properly segment, but to be able to process a large amount of images in a more general approach.
-
-Although Deep Learning techniques have been used in welding imaging problems, it has been mainly in a reinforcement learning approach to control the welding machine \textit{in situ} \cite{Gunther}. Similarly, neural networks have been used for defect detection using several sensors, this was achieved by the use of Convolutional Neural Networks to classify the input into one of different degrees of quality of the result, that is to say modes of failure \cite{Zhang}.
-
-Nonetheless, to the best of the author's knowledge, segmentation problems have not been addressed with the use of Deep Learning techniques in the study of welding video data, which makes this thesis a novel approach to help solving a relevant problem in the field.
+In the context of FCN, these residual connections are called \textit{skip layers}, which also skip connections to further layers in the network, but do so by concatenating layers as opposed to the sum shown in \ref{fig:res-connection}. On a semantic level, what the network does when convolving and pooling is extracting more high-level representations of the input. Then, what the skip layers do is recover the layers' low-level information which is the context needed to reconstruct when upsampling \cite{Ronneberger}.

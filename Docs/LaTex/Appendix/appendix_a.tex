@@ -1,10 +1,5 @@
-% Please add the following required packages to your document preamble:
-% \usepackage{lscape}
-% \usepackage{longtable}
-% Note: It may be necessary to compile the document several times to get a multi-page table to line up properly
-
 \chapter{Grid search results}\label{appendix_gs}
-In this section the results obtained via grid search are shown. The hyperparameters changed are batch size (8, 16, 32), number of filters (8, 16, 32) and learning rate (0.01, 0.005, 0.001). The rest of the parameters are fixed, namely, the loss function is the Jaccard distance, the optimizer is Adam and a maximum of 200 epochs is used with early stopping of patience 20. Furthermore, each model is validated with k-fold cross validation,therefore each model is run over 4 different and disjoint sets of training and validation.
+In this appendix the results obtained via grid search are shown. The hyperparameters changed are batch size (8, 16, 32), number of filters (8, 16, 32) and learning rate (0.01, 0.005, 0.001). The rest of the parameters are fixed, namely, the loss function is the Jaccard distance, the optimizer is Adam and a maximum of 200 epochs is used with early stopping of patience 20. Furthermore, each model is validated with k-fold cross validation,therefore each model is run over 4 different and disjoint sets of training and validation.
 
 The results are shown in the following tables, where each is for one specific pair of dataset (globular, spray) and architecture (U-Net, DeconvNet, MultiResUnet). A total of 134 different models were run.
 Notice that the number of models is less than all of the possible combinations of parameters, this is due to memory constraints with larger models.

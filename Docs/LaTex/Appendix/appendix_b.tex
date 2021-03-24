@@ -1,0 +1,71 @@
+\chapter{Post processing}\label{appendix_postproc}
+
+In this appendix are described the postprocessing techniques used after the segmentation of images to compute kinematic and geometric properties. These techniques are mainly from computer vision and signal processing.
+
+\section{Calculation of properties}\label{appendix_b1}
+\subsection{Geometry}
+A useful concept in computer vision is the \textit{moment}, which is a specific weighted average computed based on pixel intensity values of an image. Although a moment is a purely mathematical device, some moments have useful interpretations that can describe the image.
+
+The $n^{th}$ moment of a function $f$ around point $c$ is defined as 
+\begin{align*}
+    \mu_n=\int_{-\infty}^{\infty}(x-c)^nf(x)dx
+\end{align*}
+which can be extended to the 2D case as follows
+\begin{align*}
+    \mu_{mn}=\int\int_{-\infty}^{\infty}(x-c_x)^m(y-c_y)^nf(x,y)dydx
+\end{align*}
+Then, a discrete version is defined in order to work with pixels. Also, notice that $c_x$ and $c_y$ are arbitrary constants which can be set to $0$ to simplify the expression.
+\begin{align*}
+    \mu_{mn}=\sum_{x}\sum_{y}x^my^nf(x,y)
+\end{align*}
+In this case, the function $f(x,y)$ yields the pixel intensity values evaluated at coordinates $(x,y)$ of an image.
+
+There are two properties that will be obtained using moment calcualtions: area and centroid. Notice that for a binary image of size $(w, h)$ the zeroth moment is given by
+\begin{align*}
+    \mu_{00}=\sum_{x=0}^{h}\sum_{y=0}^{w}x^0y^0f(x,y) = \sum_{x=0}^{h}\sum_{y=0}^{w}f(x,y)
+\end{align*}
+which is just the sum of every pixel intensity across the image, i.e., its area. In a similar fashion, it can be proven\footnote{An in depth analysis of moments and their applications in images can be found in \textit{Mukundan} \cite{image_moment}.} that the centroid is given by
+\begin{align*}
+    \left\{\Vec{x},\Vec{y}\right\}=\left\{\frac{\mu_{10}}{\mu_{00}},\frac{\mu_{01}}{\mu_{00}}\right\}
+\end{align*}
+
+Finally, it is also possible to measure the outline of a contour by counting its bordering pixels, that is perimeter which can be done using the \texttt{opencv} library.
+
+\subsection{Physical properties}\label{sec:physical}
+In this thesis the images come from videos, so the centroids can then be used to compute velocity and acceleration from consecutive frames simply by taking frame to frame distance and time differences if the frame rate and pixel to distance conversion are available (see Chapter \ref{chap:dataset} for these conversions). In particular, numerical approximations using central differences are used, in which the derivative of a function at point $x$ is
+\begin{align*}
+    \frac{df}{dx}=\frac{f(x+h)-f(x-h)}{2h}
+\end{align*}
+where $h$ is a sufficiently small number. In this case, $h$ is the sampling period and $f(x)$ is the position or velocity of the centroid at every sampling time. In the borders it is not possible to apply central differences, so forward and backward differentiation is used at the start and the end of the data respectively.
+
+Another relevant property that can be obtained is the surface tension of the droplet using Rayleigh's formula \cite{rayleigh}
+\begin{align}\label{eq:rayleigh}
+    \sigma = \frac{3\pi \rho V}{8\tau^2}
+\end{align}
+where $\rho$ is the droplet's density, $V$ is the volume and $\tau$ is the oscillation period during free flight. Values for $\rho$ can be found in literature \cite{surface_tension}, the volume can be approximated assuming a free flight droplet is a prolate ellipsoid, that is the 2D droplet is an ellipse and the depth is equal to the semi-minor axis of the ellipse in the 2D plane. Then, the volume can be obtained by
+\begin{align}\label{eq:vol}
+    V=\frac{4}{3}\pi a^2b
+\end{align}
+where $a$ is the semi-minor axis and $b$ is the semi-major axis. The ellipse's parameters are obtained with \texttt{opencv} which can fit an ellipse to a contour through a least squares approximation returning the center coordinates, axes lengths (major and minor) and angle with respect to the horizontal axis.
+
+The remaining parameter needed for the surface tension is the period of oscillation and it can be approximated with Fourier analysis. Specifically, free flight time windows are taken from the perimeter curve, that is the time between the droplet detachment and landing on the weld pool. Then, the signal can be processed using the Fast Fourier Transform (FFT) to extract its principal frequencies. Furthermore, the period can be calculated simply by taking the inverse of the frequency. In order to be able to apply this method of analysis the sampling must satisfy the Nyquist-Shanon sampling theorem which states that the frequencies that can be reconstructed are, at most, half the sampling frequency \cite{shannon}
+\begin{align*}
+    f^*<\frac{f_s}{2}
+\end{align*}
+where $f_s$ is the sampling frequency and $f^*$ are the frequencies for which perfect reconstruction is guaranteed. In this case, the sampling frequency is known and has a value of $3\; kHz$, so any frequency below $1.5\;[kHz]$ can be accurately detected by Fourier analysis\footnote{Higher frequencies could appear in the spectrum due to aliasing if they are multiples of the ones found through Fourier analysis.}.
+
+\section{Signal smoothing}
+The properties obtained are usually noisy, so a smoother signal is useful to proceed with some calculations. This is done by convolving the 1D signal (e.g. area of a droplet in each frame) with a window function. Specifically, the Hanning window is used which is defined as 
+\begin{align*}
+    w(n)=0.5-0.5\cos{\left(\frac{2\pi n}{M-1}\right)},\quad 0\leq n\leq M-1
+\end{align*}
+where $M$ is the size of the window and $n$ are the points along the window.
+
+In figure \ref{fig:hanning} the hanning window is shown as well as the result when smoothing a noisy sine wave. It can be seen that signal smoothing is useful to highlight the major peaks in the original signal and attenuating noise. The window is effectively computing a weighted average at each step, a flat window would be a moving average smoothing. The implementation is done as documented by \texttt{scipy}\footnote{\url{https://scipy-cookbook.readthedocs.io/items/SignalSmooth.html}}. It is worth mentioning that the window size should be chosen in relation to the pattern of interest. A window that is too wide might obfuscate relevant information of short cycle variations while a short window may not reduce the noise enough. Notice that in the context of this thesis, the variations are not noise and rather are just the inherent variation of calculated parameters. Regardless, the smoothing of the signal is useful for specific purposes.
+
+\begin{figure}
+    \centering
+    \import{Images/Results/}{hanning.pgf}
+    \caption[Examples of a hanning window and signal smoothing]{Examples of a hanning window of size $51$ (a) and signal smoothing of a noisy sine signal (b). The hanning window is moved across the signal and at each step one-dimensional convolution is computed. }
+    \label{fig:hanning}
+\end{figure}

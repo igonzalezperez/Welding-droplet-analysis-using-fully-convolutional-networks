@@ -80,7 +80,7 @@
   \addcontentsline{toc}{chapter}{\protect\numberline{}Introduction}
 }{\vfill\null}
 \newenvironment{conclusion}{
-  \chapter*{Conclusion}
+  \chapter*{Concluding remarks and future work}
   \addcontentsline{toc}{chapter}{\protect\numberline{}Conclusion}
 }{\vfill\null}
 
@@ -162,7 +162,7 @@
 
 		\vspace{3cm}
 			\foreach \x [count=\xi] in \@guia {
-				PROFESOR GUÍA\ifnum\xi>1 \ \xi \fi:\\ \MakeUppercase\x\\
+				PROFESORA GUÍA\ifnum\xi>1 \ \xi \fi:\\ \MakeUppercase\x\\
 			}
 
 		\vspace{1cm}

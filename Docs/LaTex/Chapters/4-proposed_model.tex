@@ -1,9 +1,9 @@
-\chapter{Proposed approach using Fully Convolutional Networks}
+\chapter{Proposed approach using Fully Convolutional Networks}\label{chap:proposed_model}
 
 In this chapter the proposed models are described. These consist in FCN based deep learning architectures which are compared in the same datasets to ensure validated results and also to choose the best performing model for further analysis. The architectures are described using baseline parameters that will then be optimized using a grid search. In figure \ref{fig:flowchart} a flowchart of the proposed framework is shown.
 
 \section{Segmentation architectures}
-The architectures used are FCN based, so they share they building blocks shown in figure \ref{fig:fcn}. There is a contracting path of successive convolution and pooling layers and then an expanding paths that mirrors the shape of the contracting one by applying transposed convolutions (upsampling) instead of pooling. Also, in the contracting path the number of feature maps increases while in the expanding path it decreases until reaching the output's number of channels. The segmentation architectures used are:
+The architectures used are FCN based, so they share they building blocks shown in figure \ref{fig:fcn}. There is a contracting path of successive convolution and pooling layers and then an expanding path that mirrors the shape of the contracting one by applying transposed convolutions (upsampling) instead of pooling. Also, in the contracting path the number of feature maps increases while in the expanding path it decreases until reaching the output's number of channels. The segmentation architectures used are:
 
 \begin{itemize}
     \item \textbf{DeconvNet:} This network is an FCN which uses a VGGNet \cite{vggnet} as a backbone for the contracting path. The expanding path mirrors the VGGNet architecture. Since it is based in a network that has already proven to have good results with image data it is appropriate to extend its application \cite{vggnet, Noh}. In figure \ref{fig:deconv} the contracting path is shown.
@@ -38,7 +38,7 @@ The architectures used are FCN based, so they share they building blocks shown i
     \resizebox{\linewidth}{!}{
     \input{Graphs/deconvnet}
     }
-    \caption[Illustration of a DeconvNet contracting path]{Illustration of a DeconvNet contracting path. A VGGNet architecture is used and then mirrored in the expanding path. At the top of each block the kernel shape is shown, below are depicted the number of feature maps per convolution. Finally, $I$ is the input size which is halved after each. Source: Adapted from \url{https://github.com/HarisIqbal88/PlotNeuralNet}.}
+    \caption[Illustration of a DeconvNet contracting path]{Illustration of a DeconvNet contracting path. A VGGNet architecture is used and then mirrored in the expanding path. At the top of each block the kernel shape is shown, below are depicted the number of feature maps per convolution. Finally, $I$ is the input size which is halved after each pooling layer. Source: Adapted from \url{https://github.com/HarisIqbal88/PlotNeuralNet}.}
     \label{fig:deconv}
 \end{figure}
     
@@ -56,7 +56,7 @@ The architectures used are FCN based, so they share they building blocks shown i
     \resizebox{0.5\linewidth}{!}{
     \input{Graphs/respath}
     }
-    \caption[Illustration of a residual path]{Illustration of a residual path. These type of block is used in series in the MultiResUnet in between skip layers, so the skipped features are processed before being concatenated to the expanding path. Source: Adapted from \url{https://github.com/HarisIqbal88/PlotNeuralNet}.}
+    \caption[Illustration of a residual path]{Illustration of a residual path. This type of block is used in series in the MultiResUnet in between skip layers, so the skipped features are processed before being concatenated to the expanding path. Source: Adapted from \url{https://github.com/HarisIqbal88/PlotNeuralNet}.}
     \label{fig:respath}
 \end{figure}
 
@@ -67,17 +67,15 @@ As stated earlier, to train a supervised neural network it is necessary to have 
 \begin{align*}
     J(A, B) = \frac{|A\cap B|}{|A\cup B|}
 \end{align*}
-where $|\cdot|$ is the number of elements. Hence, if the overlap is perfect $2|A\cap B|=|A\cup B|\xrightarrow[]{} J=1$. Conversely, if there is no overlap $|A\cap B|=0\xrightarrow{} J=0$. In a segmentation mapping, $|A\cap B|$ can be computed as the element-wise multiplication of $A$ and $B$, and then sum the result. Furthermore, $|\cdot|$ is computed as the sum of the matrix' elements. The score is computed over all classes and then averaged.
+where $|\cdot|$ is the cardinality of the set. Hence, if the overlap is perfect $|A\cap B|=|A\cup B|\xrightarrow[]{} J=1$. Conversely, if there is no overlap $|A\cap B|=0\xrightarrow{} J=0$. In a segmentation mapping, $|A\cap B|$ can be computed as the element-wise multiplication of $A$ and $B$, and then sum the result. Furthermore, $|\cdot|$ is computed as the sum of the matrix' elements. The score is computed over all classes and then averaged.
     
-In order to minimize a loss function using the dice coefficient the Jaccard distance is used and is given by
+In order to minimize a loss function using the Jaccard index, the Jaccard distance is used and is given by
 \begin{align*}
     d_j(A,B)=1-J(A,B)
 \end{align*}
 
-
-
 \section{Validation}
-The proposed architectures have to be validated to ensure that the best results are obtained. Then, every model is subject to a grid search. The parameters used for grid search are shown in table \ref{table:grid_search}. Also, each model (i.e. each point in the grid) is run using $k$-fold cross validation with $k=4$. That is, each model is run four times with a non-overlapping $25\%$ of validation data each time. The average loss in the validation set is used to compare the models' performances and choose the best one.
+The proposed architectures have to be validated to ensure that the best results are obtained. Then, every model is subject to a grid search. The parameters used for grid search are shown in table \ref{table:grid_search}. Also, each model (i.e. each point in the grid) is run using $k$-fold cross validation with $k=4$. That is, each model is run four times with a different and disjoint $25\%$ of validation data each time. The average loss in the validation set is used to compare the models' performances and choose the best one.
 
 \begin{table}
 \caption[Hyperparameters used for grid search]{Hyperparameters used for grid search.}
@@ -92,38 +90,3 @@ Epochs & \begin{tabular}[c]{@{}c@{}}Early stopping\\ Max: 200 epochs\\ Patience:
 \end{tabular}
 \end{table}
 
-\section{Post processing}
-
-The results produced by the FCN need to be processed to extract relevant information of the process.
-
-\subsection{Image moments}
-A useful concept in computer vision is the \textit{moment}, which is a specific weighted average computed based on pixel intensity values of an image. Although a moment is a purely mathematical device, some moments have useful interpretations that can describe the image.
-
-The $n^{th}$ moment of a function $f$ around the point $c$ is defined as 
-\begin{align*}
-    \mu_n=\int_{-\infty}^{\infty}(x-c)^nf(x)dx
-\end{align*}
-
-which can be extended to the 2D case as follows
-
-\begin{align*}
-    \mu_{m,n}=\int\int_{-\infty}^{\infty}(x-c_x)^m(y-c_y)^nf(x,y)dydx
-\end{align*}
-Then, a discrete version is defined in order to work with pixels. Also, notice that $c_x$ and $c_y$ are arbitrary constants which can be set to $0$ to simplify the expression.
-\begin{align*}
-    \mu_{m,n}=\sum_{x=0}^{\infty}\sum_{y=0}^{\infty}x^my^nf(x,y)
-\end{align*}
-
-In this case, the function $f(x,y)$ yields the pixel intensity values evaluated at coordinates $(x,y)$ of an image.
-
-There are two properties that will be obtained using moment calcualtions, area and centroid. Notice that for a binary image of size $(w, h)$ the zeroth moment is given by
-\begin{align*}
-    \mu_{00}=\sum_{x=0}^{h}\sum_{y=0}^{w}x^0y^0f(x,y) = \sum_{x=0}^{h}\sum_{y=0}^{w}f(x,y)
-\end{align*}
-
-which is just the sum of every pixel intensity across the image, i.e., its area. In a similar fashion, it can ber proven that the centroid is given by
-\begin{align*}
-    \left\{\Vec{x},\Vec{y}\right\}=\left\{\frac{\mu_{10}}{\mu_{00}},\frac{\mu_{01}}{\mu_{00}}\right\}
-\end{align*}
-
-In this thesis the images come from videos, so the centroids can then be used to compute velocity and acceleration from consecutive frames if the frame rate and pixel to distance conversion are available (see Chapter \ref{chap:dataset} for these conversions).
