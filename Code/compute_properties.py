@@ -6,17 +6,15 @@ import os
 import pickle
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
 from progressbar import progressbar as progress
 from scipy.spatial import distance
 from cv2 import cv2
+from utils.postprocessing import time_seq
 
 # %% VARIABLES
 # 26 px = .045 in = 1.143 mm
 # 1px = 0.04396153846153846 mm = 4.396153846153846 * 10^(-5) m
-PX_TO_MM = 4.396153846153846 * 10**(-2)
-P1 = 334*10 ^ (-6)  # period between frames in [s]
-P2 = 333*10 ^ (-6)
+PX_TO_MM = 1.143/26
 
 ARCHITECTURE_NAME = 'unet'
 DATASET = 'Globular'
@@ -37,23 +35,51 @@ def compute_properties(img):
     _, thresh = cv2.threshold(img, 127, 255, 0)
     contours, _ = cv2.findContours(
         thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    centroids_float = []
     centroids = []
     area = []
     perimeter = []
+    volume = []
     for cnt in contours:
         mmt = cv2.moments(cnt)
         if mmt['m00'] > 20:  # ignore really small contours
+            # plt.imshow(thresh)
+            # plt.show()
+            # x = ellipse[0][0]
+            # y = ellipse[0][1]
+            # a = ellipse[1][0]/2
+            # b = ellipse[1][1]/2
+            # alpha = ellipse[2]*np.pi/180
+            # x_a = x + a*np.cos(alpha)
+            # y_a = y + a*np.sin(alpha)
+            # x_b = x + b*np.cos(np.pi/2+alpha)
+            # y_b = y + b*np.sin(np.pi/2+alpha)
+            # plt.plot(x, y, 'rx')
+            # plt.plot(x_a, y_a, 'rx')
+            # plt.plot(x_b, y_b, 'rx')
+            # thresh = cv2.ellipse(
+            #     np.zeros((thresh.shape[0], thresh.shape[1], 3)), ellipse, (255, 255, 255), 2)
+            # plt.imshow(thresh)
+            # plt.show()
             try:
-                c_x = int(mmt['m10']/mmt['m00'])
-                c_y = int(mmt['m01']/mmt['m00'])
-
+                c_x = mmt['m10']/mmt['m00']
+                c_y = mmt['m01']/mmt['m00']
+                centroids_float.append((c_x, c_y))
+                c_x = int(c_x)
+                c_y = int(c_y)
                 centroids.append((c_x, c_y))
 
                 area.append(mmt['m00']*PX_TO_MM**2)
                 perimeter.append(cv2.arcLength(cnt, True)*PX_TO_MM)
+
+                ellipse = cv2.fitEllipse(cnt)
+                semi_major = max(ellipse[1])/2
+                semi_minor = min(ellipse[1])/2
+                vol = (4/3)*np.pi*semi_minor**2*semi_major
+                volume.append(vol*PX_TO_MM**3)
             except ZeroDivisionError:
                 continue
-    return centroids, area, perimeter
+    return centroids_float, centroids, area, perimeter, volume
 
 
 def save_properties():
@@ -61,25 +87,39 @@ def save_properties():
     Computes properties for every image in a dataset, then saves the lists
     of properties to a pickle file.
     '''
+    cents_float_arr = []
     cents_arr = []
     area_arr = []
     perim_arr = []
+    vol_arr = []
+    time_list = []
+    time_cycle = time_seq()
+
     data_img = np.load(os.path.join(
         'Data', 'Image', 'Input', f'{DATASET.lower()}_rgb.npz'))
     data_preds = np.load(PREDS_DIR)
     _ = data_img['images']
     preds = data_preds['preds']
 
-    for pred in progress(preds):
-        cents, area, perimeter = compute_properties(pred)
+    for _, pred in progress(enumerate(preds)):
+        try:
+            last_time = time_list[-1]
+            time_list.append(last_time + next(time_cycle))
+        except IndexError:
+            time_list.append(0)
+        cents_float, cents, area, perimeter, volume = compute_properties(pred)
+        cents_float_arr.append(cents_float)
         cents_arr.append(cents)
         area_arr.append(area)
         perim_arr.append(perimeter)
-
+        vol_arr.append(volume)
     geometry = {
+        'centroids_float': cents_float_arr,
         'centroids': cents_arr,
         'areas': area_arr,
-        'perimeters': perim_arr
+        'perimeters': perim_arr,
+        'volumes': vol_arr,
+        'time': time_list
     }
     with open(os.path.join('Output', 'Geometry', f'{ARCHITECTURE_NAME.lower()}_{DATASET.lower()}_{N_FILTERS}_{BATCH_SIZE_TRAIN}_{EPOCHS}_geometry.pickle'), 'wb') as data_file:
         pickle.dump(geometry, data_file)
@@ -111,7 +151,7 @@ def compute_vel():
     geom = geometry['centroids']
 
     velocity = []
-    #dt = time_period([P1, P2, P2, P2])
+    # dt = time_period([P1, P2, P2, P2])
     for i in range(len(geom)-1):
         cent1 = geom[i]
         cent2 = geom[i+1]
@@ -197,64 +237,6 @@ def next_min(arr):
     for _ in range(len(arr)):
         yield np.argmin(arr), np.amin(arr)
         arr = np.delete(arr, np.argmin(arr))
-
-
-def plot_vel(vel_list):
-    '''
-    DOC
-    '''
-    _, (ax1, _) = plt.subplots(
-        2, 1)
-    for idx, vel in enumerate(vel_list):
-        try:
-            ax1.plot(idx, min(vel), 'rx')
-        except TypeError:
-            ax1.plot(idx, vel, 'k.')
-
-        # ax2.imshow(cv2.imread('HSV Frames\\Test\\' +
-        #                      DATASET + '\\' + str(idx) + '.jpg', cv2.IMREAD_GRAYSCALE))
-        ax1.set_ylabel('Velocity (m/s)')
-        plt.pause(.0001)
-    plt.show()
-
-    # geom = GEOMETRY['centroids']
-    # for i in range(len(geom)):
-    #     cent = geom[i]
-    #     for j in cent:
-    #         if len(cent) > 1:
-    #             plt.plot(j[0]*PX_TO_MM, -j[1]*PX_TO_MM, 'rx')
-    #         else:
-    #             plt.plot(j[0]*PX_TO_MM, -j[1]*PX_TO_MM, 'k.')
-    #     plt.xlim([0, 352*PX_TO_MM])
-    #     plt.ylim([-288*PX_TO_MM, 0])
-    #     plt.pause(.001)
-    #     plt.cla()
-    # plt.show()
-
-
-# def plot_pos():
-#     with open('Geometry/' + DATASET + '.pickle', 'rb') as f:
-#         GEOMETRY = pickle.load(f)
-
-#     geom = GEOMETRY['centroids']
-#     for idx, i in enumerate(geom):
-#         if len(i) == 1:
-#             plt.plot(idx, -i[0][1], 'k.')
-#         elif len(i) > 1:
-
-#             for j in i:
-#                 plt.plot(idx, -j[1], 'rx')
-#         # plt.xlim([0, 352*PX_TO_MM])
-#         # plt.ylim([288*PX_TO_MM, 0])
-#         plt.pause(.0001)
-#         # plt.cla()
-#     plt.show()
-
-
-# def number_of_droplets():
-#     geom = GEOMETRY['centroids']
-#     n_droplets = [len(g) for g in geom]
-#     return n_droplets
 
 
 # %% MAIN
