@@ -2,8 +2,10 @@
 DOC
 '''
 # %% IMPORTS
+from itertools import cycle
 import numpy as np
 import matplotlib.pyplot as plt
+
 # %% FUNCTIONS
 
 
@@ -140,3 +142,49 @@ def axvlines(xs, ax=None, lims=None, **plot_kwargs):
                          [None, :], repeats=len(xs), axis=0).flatten()
     plot = ax.plot(x_points, y_points, scaley=False, **plot_kwargs)
     return plot
+
+
+def time_seq():
+    '''
+    DOC
+    '''
+    time_array = [333, 333, 333, 334]
+    for i in cycle(time_array):
+        yield i
+
+
+def polynomial_function(coefs, arr):
+    '''
+    Computes polynomial of an array given the coefficients -> polynomial(coefs, arr) = coef[0]*arr**2 + coef[1]*arr + coef[0]
+
+    Args:
+    coefs {1darray} -- Coefficients of polynomial from higest to lowest power
+    arr {ndarray} -- Independent variable of polynomial
+
+    Returns:
+    {ndarray} -- Polynomial of arr with coefs
+    '''
+    return sum([coefs[len(coefs)-i-1]*arr**i for i in range(len(coefs))])
+
+
+def derivative(func_arr, x_arr):
+    '''
+    Derivative of array using central differences.
+
+    Args:
+    func_arr {1darray} -- Function to differentiate
+    x_arr {1darray} -- Independent variable
+
+    Returns:
+    out {1darray} -- Derivative df/dx
+    '''
+    out = []
+    for i, _ in enumerate(func_arr):
+        if i == 0:  # forward difference
+            dif = (func_arr[i+1]-func_arr[i])/(x_arr[i+1]-x_arr[i])
+        elif i == len(func_arr)-1:  # backward difference
+            dif = (func_arr[i]-func_arr[i-1])/(x_arr[i]-x_arr[i-1])
+        else:  # central difference
+            dif = (func_arr[i+1]-func_arr[i-1])/(x_arr[i+1]-x_arr[i-1])
+        out.append(dif)
+    return np.array(out)
