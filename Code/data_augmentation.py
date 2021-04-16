@@ -10,19 +10,11 @@ import seaborn as sns
 from progressbar import progressbar as progress
 from imgaug import augmenters as iaa
 from imgaug.augmentables.segmaps import SegmentationMapsOnImage
-from utils.postprocessing import set_size
+from utils.postprocessing import set_size, latex_plot_config
 
 # video settings
 matplotlib.rcParams['animation.ffmpeg_path'] = os.path.abspath(
     'C:\\ffmpeg\\bin\\ffmpeg.exe')
-# output images for LaTex
-matplotlib.use("pgf")
-matplotlib.rcParams.update({
-    "pgf.texsystem": "pdflatex",
-    'font.family': 'serif',
-    'text.usetex': True,
-    'pgf.rcfonts': False,
-})
 # set style
 sns.set()
 
@@ -73,9 +65,6 @@ def plot_augmented_samples(dataset):
     DOC
     '''
     def get_coords(n_images=12, n_rows=3):
-        '''
-        DOC
-        '''
         coords = []
         n_cols = int(np.ceil(n_images/n_rows))
         for i in range(n_rows):
@@ -88,7 +77,7 @@ def plot_augmented_samples(dataset):
     data = np.load(os.path.join('Data', 'Image', 'Labelbox',
                                 dataset.lower() + '_segmented.npz'))
 
-    num = np.random.randint(low=0, high=len(data['images']))
+    num = 0  # np.random.randint(low=0, high=len(data['images']))
     img = data['images'][num]
     mask = data['masks'][num]
     fig, axes = plt.subplots(
@@ -97,8 +86,8 @@ def plot_augmented_samples(dataset):
     coord_2 = next(coord)
     axes[coord_1].imshow(img, cmap='viridis')
     axes[coord_2].imshow(mask, cmap='gray')
-    axes[coord_1].set_title(f'Original image\n(Frame {num})')
-    axes[coord_2].set_title('Original mask')
+    #axes[coord_1].set_title(f'Original image\n(Frame {num})')
+    #axes[coord_2].set_title('Original mask')
 
     mask = mask.astype(bool)
     img_shape = img.shape
@@ -116,6 +105,10 @@ def plot_augmented_samples(dataset):
     plt.xticks([])
     plt.yticks([])
     fig.tight_layout()
+    fig.savefig(os.path.join('Output', 'Plots',
+                             'augmented_sample', 'augmented_sample.png'), bbox_inches='tight', transparent=True, dpi=300)
+    plt.show()
+    latex_plot_config()
     fig.savefig(os.path.join('Output', 'Plots',
                              'augmented_sample', 'augmented_sample.pgf'), bbox_inches='tight')
 
@@ -149,4 +142,4 @@ def main():
 
 # %% MAIN
 if __name__ == "__main__":
-    plot_augmented_samples(DATASET[0])
+    main()

@@ -12,21 +12,13 @@ import seaborn as sns
 from sklearn.model_selection import train_test_split, KFold
 from progressbar import progressbar as progress
 from architectures import UNET, DECONVNET, MULTIRES
-from utils.postprocessing import set_size
+from utils.postprocessing import set_size, latex_plot_config
 
 # video settings
 matplotlib.rcParams['animation.ffmpeg_path'] = os.path.abspath(
     'C:\\ffmpeg\\bin\\ffmpeg.exe')
-# output images for LaTex
-matplotlib.use("pgf")
-matplotlib.rcParams.update({
-    "pgf.texsystem": "pdflatex",
-    'font.family': 'serif',
-    'text.usetex': True,
-    'pgf.rcfonts': False,
-})
 # set style
-sns.set()
+sns.set_style('whitegrid')
 
 gpus = tf.config.experimental.list_physical_devices('GPU')
 if gpus:
@@ -190,6 +182,9 @@ def plot_train_loss(params):
     axes.set_ylabel('Loss')
     axes.legend()
     fig.tight_layout()
+    fig.savefig(os.path.join('Output', 'Plots',
+                             f'{params["dataset"].lower()}_train_loss_curve.png'), bbox_inches='tight', transparent=True, dpi=300)
+    latex_plot_config()
     fig.savefig(os.path.join('Output', 'Plots',
                              f'{params["dataset"].lower()}_train_loss_curve.pgf'), bbox_inches='tight')
 

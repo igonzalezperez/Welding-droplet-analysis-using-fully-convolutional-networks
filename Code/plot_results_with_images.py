@@ -33,9 +33,9 @@ sns.set_style('whitegrid')
 # LaTex \textwidth = 472.03123 pt. Useful for figure sizing
 
 ARCHITECTURE_NAME = 'unet'
-DATASET = 'Globular'
-N_FILTERS = 32
-BATCH_SIZE_TRAIN = 16
+DATASET = 'Spray'
+N_FILTERS = 8
+BATCH_SIZE_TRAIN = 8
 EPOCHS = 200
 
 DATA_DIR_RGB = os.path.join(
@@ -90,7 +90,7 @@ def plot_centroids(num, save=False):
     img_mask = get_concat_h(image, mask)
     with sns.axes_style('dark'):
         fig, axes = plt.subplots(1, 1, figsize=set_size(
-            fraction=1, aspect_ratio=IMAGES.shape[1]/(2*IMAGES.shape[2]), subplots=(1, 1)))
+            width_pt=440, aspect_ratio=.42))
     axes.set_xticks([])
     axes.set_yticks([])
 
@@ -173,82 +173,6 @@ def animate_centroids(save=False):
         plt.show()
 
 
-def plot_areas(width, func,  save=False):
-    '''
-    Plots area of a droplet over time for consecutive time frames. Black dots represent one droplet, red crosses are for multiple
-    droplets in the same frame and blue dots means no droplet is detected (area=0). Also, the detachment of droplets is shown in
-    dashed vertical lines obtained by finding the (minimum) peaks of a smoothed version (green curve) of the original signal.
-    Smoothing is done using a hanning window over the data. Datapoints that have multiple values are summed.
-
-    Args:
-    width {int} -- length of the time frames, i.e. a signal with length 100 plotted with width 10 will yield 10 consecutive plots.
-
-    Kwargs:
-    save {bool} -- wether to save each plot as a .pgf file or show it using plt.show().
-    '''
-    if save:
-        latex_plot_config()
-    areas_chunks = chunks(AREAS, width)
-
-    for k, chunk in enumerate(areas_chunks):
-        single_id, single = ([], [])
-        multi_id, multi = ([], [])
-        zero_id = []
-        original_area_id, original_area = ([], [])
-        for i, areas in enumerate(chunk):
-            i = i+OFFSET
-            if len(areas) > 0:
-                original_area.append(func(areas))
-            else:
-                original_area.append(0)
-            original_area_id.append(i+width*k)
-
-            if len(areas) == 0:
-                zero_id.append(i + width*k)
-            else:
-                for area in areas:
-                    if len(areas) == 1:
-                        single_id.append(i+width*k)
-                        single.append(area)
-                    else:
-                        multi_id.append(i+width*k)
-                        multi.append(area)
-        # globular
-        if DATASET.lower() == 'globular':
-            smooth_area = smooth_signal(np.array(original_area), 41)
-            peaks = find_peaks(-smooth_area, height=-5, prominence=2)[0]
-        # spray
-        if DATASET.lower() == 'spray':
-            smooth_area = smooth_signal(np.array(original_area), 7)
-            peaks = find_peaks(smooth_area)[0]
-        # print(len(peaks))
-        # circ = Ellipse(xy=(9600, 5), height=10, width=300, fill=False,
-        #                color='k', linewidth=1)
-        # axes.add_artist(circ)
-        fig, axes = plt.subplots(1, 1, figsize=set_size(aspect_ratio=.5))
-        axes.set_xlabel('Frame')
-        axes.set_ylabel(r'Area [$mm^2$]')
-        axes.set_ylim([-.1, max(max(chunk))+1])
-        axes.scatter(zero_id, np.zeros(len(zero_id)), s=12,
-                     marker='o', color='b', label='Zero droplets')
-        axes.scatter(single_id, single, s=12, marker='.',
-                     color='k', label='Single droplet')
-        axes.scatter(multi_id, multi, s=9, marker='x',
-                     color='r', label='Multiple droplets')
-        axvlines(xs=peaks+width*k+OFFSET, ax=axes, label='Detachment',
-                 linestyle='--', color='k', alpha=0.6)
-        axes.plot(original_area_id,
-                  smooth_area, 'g-', label='Smoothed')
-        # axes.legend()
-        if save:
-            fig.tight_layout()
-            fig.savefig(os.path.join('Output', 'Plots', 'areas',
-                                     f'{DATASET.lower()}_area_{k}.pgf'))
-            plt.close(fig=fig)
-        else:
-            plt.show()
-
-
 def animate_areas(width, func, save=False):
     '''
     Animates area of a droplet over time for consecutive time frames. Black dots represent one droplet, red crosses are for multiple
@@ -291,11 +215,13 @@ def animate_areas(width, func, save=False):
         else:
             original_area.append(0)
     # globular
-    smooth_area = smooth_signal(np.array(original_area), 41)
-    peaks = find_peaks(-smooth_area, height=-5, prominence=2)[0]
+    if DATASET.lower() == 'globular':
+        smooth_area = smooth_signal(np.array(original_area), 41)
+        peaks = find_peaks(-smooth_area, height=-5, prominence=2)[0]
     # spray
-    # smooth_area = smooth_signal(np.array(original_area), 7)
-    # peaks = find_peaks(smooth_area)[0]
+    if DATASET.lower() == 'spray':
+        smooth_area = smooth_signal(np.array(original_area), 7)
+        peaks = find_peaks(smooth_area)[0]
 
     def init():
         image_ax.set_data(np.zeros(IMAGES[0].shape))
@@ -404,11 +330,13 @@ def animate_areas_with_masks(width, func, save=False):
         else:
             original_area.append(0)
     # globular
-    # smooth_area = smooth_signal(np.array(original_area), 41)
-    # peaks = find_peaks(-smooth_area, height=-5, prominence=2)[0]
+    if DATASET.lower() == 'globular':
+        smooth_area = smooth_signal(np.array(original_area), 41)
+        peaks = find_peaks(-smooth_area, height=-5, prominence=2)[0]
     # spray
-    smooth_area = smooth_signal(np.array(original_area), 7)
-    peaks = find_peaks(smooth_area)[0]
+    if DATASET.lower() == 'spray':
+        smooth_area = smooth_signal(np.array(original_area), 7)
+        peaks = find_peaks(smooth_area)[0]
 
     def animate(i):
         print(i)
@@ -497,6 +425,7 @@ def animate_centroids_with_masks(save=False):
         multi_droplet_2, = axes[1].plot([], [], 'rx')
 
     def animate(i):
+        print(i)
         try:
             cent, img, msk = next(data)
             image_ax.set_data(img)
@@ -572,9 +501,9 @@ def plot_strip(num, save=False):
     ax0.plot(-mask_strip+image.shape[0]-2, 'r', linewidth=1)
     ax0.plot([0, strip.shape[0]-2], [height, height],
              linewidth=1, color='yellow', linestyle='--')
-    ax0.set_title(f'Frame {num}')
-    ax0.text(0.5, -0.1, "(a)", size=12, ha="center",
-             transform=ax0.transAxes)
+    # ax0.set_title(f'Frame {num}')
+    # ax0.text(0.5, -0.1, "(a)", size=12, ha="center",
+    #          transform=ax0.transAxes)
 
     ax1 = fig.add_subplot(gsc[1, 0])
 
@@ -583,12 +512,12 @@ def plot_strip(num, save=False):
     ax1.scatter(intersection_id,
                 strip[intersection_id], marker='x', s=50, label='Intersection')
     ax1.set_xlim([0, strip.shape[0]-2])
-    ax1.text(0.5, -0.2, "(c)", size=12, ha="center",
-             transform=ax1.transAxes)
+    # ax1.text(0.5, -0.2, "(c)", size=12, ha="center",
+    #          transform=ax1.transAxes)
     ax1.set_xlabel('Pixel')
     ax1.set_ylabel('Pixel value')
     ax1.xaxis.tick_top()
-    ax1.legend()
+    ax1.legend(loc='lower left')
     with sns.axes_style('dark'):
         ax2 = fig.add_subplot(gsc[0, 1])
 
@@ -597,14 +526,23 @@ def plot_strip(num, save=False):
              linewidth=1, color='yellow', linestyle='--')
     ax2.set_xticks([])
     ax2.set_yticks([])
-    ax2.text(0.5, -0.1, "(b)", size=12, ha="center",
-             transform=ax2.transAxes)
+    # ax2.text(0.5, -0.1, "(b)", size=12, ha="center",
+    #          transform=ax2.transAxes)
 
     fig.tight_layout()
     if save:
         os.makedirs(os.path.join('Output', 'Plots',
                                  f'boundary_{DATASET.lower()}'), exist_ok=True)
         fig.savefig(os.path.join('Output', 'Plots', f'boundary_{DATASET.lower()}',
+                                 f'{num}.png'), bbox_inches='tight', transparent=True, dpi=300)
+        latex_plot_config()
+        fig.savefig(os.path.join('Output', 'Plots', f'boundary_{DATASET.lower()}',
                                  f'{num}.pgf'), bbox_inches='tight')
     else:
         plt.show()
+
+
+if __name__ == '__main__':
+    plot_centroids(0, True)
+    plot_centroids(42, True)
+    plot_centroids(656, True)

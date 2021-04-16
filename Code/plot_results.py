@@ -11,11 +11,11 @@ import seaborn as sns
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib import animation
-from scipy.signal import hann
+from scipy.signal import hann, find_peaks
 from scipy import optimize
 from scipy.fft import fft, fftfreq
-from utils.postprocessing import parse_centroid_coords, smooth_signal, set_size, latex_plot_config, polynomial_function
-
+from utils.postprocessing import parse_centroid_coords, smooth_signal, set_size, latex_plot_config, polynomial_function, axvlines
+from utils.misc import chunks
 # video settings
 matplotlib.rcParams['animation.ffmpeg_path'] = os.path.abspath(
     'C:\\ffmpeg\\bin\\ffmpeg.exe')
@@ -56,6 +56,7 @@ CENTROIDS = GEOMETRY['centroids_float'][OFFSET:]
 AREAS = GEOMETRY['areas'][OFFSET:]
 PERIMETERS = GEOMETRY['perimeters'][OFFSET:]
 VOLUMES = GEOMETRY['volumes'][OFFSET:]
+VOLUMES_C = GEOMETRY['volumes_corrected'][OFFSET:]
 TIME = GEOMETRY['time'][OFFSET:]
 
 WRITER = animation.writers['ffmpeg'](fps=30, bitrate=1800)
@@ -109,7 +110,7 @@ def interpolate_outlier(arr, start, outlier_id, axis=1):
     return oids, vals
 
 
-def compute_vel(start, end, outlier_id=None, save=False):
+def compute_vel(start, end, outlier_id=None, save=False, savelatex=False):
     '''
     doc
     '''
@@ -135,12 +136,16 @@ def compute_vel(start, end, outlier_id=None, save=False):
     r2x = 1 - fit[1][0]/((cents[:, 0]-cents[:, 0].mean())**2).sum()
     dx_coef = np.array([3*x_coef[0], 2*x_coef[1], x_coef[2]])
     ddx_coef = np.array([6*x_coef[0], 2*x_coef[1]])
+    # dx_coef = np.array([2*x_coef[0], x_coef[1]])
+    # ddx_coef = np.array([2*x_coef[0]])
 
     fit = np.polyfit(times, cents[:, 1], deg=3, full=True)
     y_coef = fit[0]
     r2y = 1 - fit[1][0]/((cents[:, 1]-cents[:, 1].mean())**2).sum()
     dy_coef = np.array([3*y_coef[0], 2*y_coef[1], y_coef[2]])
     ddy_coef = np.array([6*y_coef[0], 2*y_coef[1]])
+    # dy_coef = np.array([2*y_coef[0], y_coef[1]])
+    # ddy_coef = np.array([2*y_coef[0]])
 
     x_interp = polynomial_function(x_coef, t_interp)
     y_interp = polynomial_function(y_coef, t_interp)
@@ -158,25 +163,26 @@ def compute_vel(start, end, outlier_id=None, save=False):
     acc_n = np.linalg.norm(acc, axis=1)
     skip = 6
 
-    fig1, axes = plt.subplots(1, 1, figsize=set_size(
-        fraction=.8, aspect_ratio=296/352))
+    fig1, axes = plt.subplots(
+        1, 1, figsize=set_size(fraction=0.75, aspect_ratio=296/352))
     axes.set_xlabel(r'$x$ coordinate [$mm$]')
     axes.set_ylabel(r'$y$ coordinate [$mm$]')
-    axes.set_xlim([min(cents[:, 0])-0.5, max(cents[:, 0])+0.5])
-    axes.set_ylim([min(cents[:, 1])-0.5, max(cents[:, 1])+0.5])
+    axes.set_xlim([min(cents[:, 0])-0.3, max(cents[:, 0])+0.3])
+    axes.set_ylim([min(cents[:, 1])-0.3, max(cents[:, 1])+0.3])
     axes.invert_yaxis()
-    axes.plot(cents[:, 0], cents[:, 1], alpha=.7, linestyle='--')
+    axes.plot(cents[:, 0], cents[:, 1], alpha=.7,
+              linestyle='--', label='Trajectory')
 
-    quiver_vel = axes.quiver(cents_interp[1:-1:skip, 0], cents_interp[1:-1:skip, 1], acc[1:-1:skip, 0], -
-                             acc[1:-1:skip, 1], width=.0045, color='r', scale=400)
+    quiver_vel = axes.quiver(cents_interp[1:-1:skip, 0], cents_interp[1:-1:skip, 1], vel[1:-1:skip, 0], -
+                             vel[1:-1:skip, 1], width=.004, color='k', scale=300)
 
-    axes.quiverkey(quiver_vel, 0.85, 0.2, 20, r'20 $\frac{{m}}{{s^2}}$',
-                   coordinates='figure', labelpos='E')
+    axes.quiverkey(quiver_vel, 0.85, 0.2, 20, r'20 $\frac{{cm}}{{s}}$',
+                   coordinates='figure', labelpos='W')
 
-    quiver_acc = axes.quiver(cents_interp[1:-1:skip, 0], cents_interp[1:-1:skip, 1], vel[1:-1:skip, 0], -
-                             vel[1:-1:skip, 1], width=.0045, scale=500)
-    axes.quiverkey(quiver_acc, 0.65, 0.2, 30, r'$30 \frac{cm}{s}$',
-                   coordinates='figure', labelpos='E')
+    quiver_acc = axes.quiver(cents_interp[1:-1:skip, 0], cents_interp[1:-1:skip, 1], acc[1:-1:skip, 0], -
+                             acc[1:-1:skip, 1], color='r', width=.004, scale=300)
+    axes.quiverkey(quiver_acc, 0.65, 0.2, 15, r'$15 \frac{m}{s^2}$',
+                   coordinates='figure', labelpos='W')
 
     axes.scatter(cents[0, 0], cents[0, 1], marker='^',
                  color='xkcd:cerulean', label='Detachment', s=100)
@@ -185,7 +191,8 @@ def compute_vel(start, end, outlier_id=None, save=False):
     plt.legend()
 
     delta_t = (perimeter_signal[-1, 1]-perimeter_signal[0, 1])*1000
-    title = fr'{DATASET}, Frames {start}-{end}, $\Delta t = {delta_t:.2f}\;ms$'
+    title = f'{DATASET}, Frames {start}-{end},\n' + \
+        fr'$\Delta t = {delta_t:.2f}\;ms$'
     plt.title(title)
     plt.tight_layout()
 
@@ -214,7 +221,7 @@ def compute_vel(start, end, outlier_id=None, save=False):
     fig2.tight_layout()
 
     fig3, axes3 = plt.subplots(2, 1, figsize=set_size())
-    plt.title(title)
+    axes3[0].set_title(title)
     axes33 = axes3[0].twinx()
     axes34 = axes3[1].twinx()
 
@@ -227,7 +234,7 @@ def compute_vel(start, end, outlier_id=None, save=False):
 
     plot_1 = axes3[0].plot(t_interp, vel[:, 0],
                            color='xkcd:orange', label=r'$v_x$')
-    plot_2 = axes33.plot(t_interp, acc[:, 0], label=r'$a_y$')
+    plot_2 = axes33.plot(t_interp, acc[:, 0], label=r'$a_x$')
     plots = plot_1 + plot_2
     labs = [l.get_label() for l in plots]
     axes3[0].legend(plots, labs)
@@ -243,7 +250,7 @@ def compute_vel(start, end, outlier_id=None, save=False):
     fig3.tight_layout()
 
     fig4, axes4 = plt.subplots(1, 1, figsize=set_size())
-    plt.title(title)
+    axes4.set_title(title)
     axes43 = axes4.twinx()
 
     axes4.set_xlabel(r'Time [$s$]')
@@ -260,16 +267,19 @@ def compute_vel(start, end, outlier_id=None, save=False):
 
     fig4.tight_layout()
 
-    if save:
+    if savelatex:
+        figs = [fig1, fig2, fig3, fig4]
+        names = ['trajectory', 'interp', 'vel_acc_coords', 'vel_acc_norm']
+        latex_plot_config()
+        for fig, name in zip(figs, names):
+            fig.savefig(os.path.join('Output', 'Plots',
+                                     'kinematic', f'{DATASET.lower()}_{name}_{start}-{end}.pgf'))
+    elif save:
         figs = [fig1, fig2, fig3, fig4]
         names = ['trajectory', 'interp', 'vel_acc_coords', 'vel_acc_norm']
         for fig, name in zip(figs, names):
             fig.savefig(os.path.join('Output', 'Plots',
-                                     'kinematic', f'{name}_{start}-{end}.png'), transparent=True, dpi=300)
-        latex_plot_config()
-        for fig, name in zip(figs, names):
-            fig.savefig(os.path.join('Output', 'Plots',
-                                     'kinematic', f'{name}_{start}-{end}.pgf'))
+                                     'kinematic', f'{DATASET.lower()}_{name}_{start}-{end}.png'), transparent=True, dpi=300)
     else:
         plt.show()
 
@@ -290,12 +300,15 @@ def compute_freq(start, end, outlier_id=None, save=False):
 
     perimeters = np.array(PERIMETERS[start:end])
     volumes = np.array(VOLUMES[start:end])
+    volumes_c = np.array(VOLUMES_C[start:end])
     centroids = np.array(CENTROIDS[start:end])
-    times = np.array(TIME[start:end])*10 ** (-6)
 
+    times = np.array(TIME[start:end])*10 ** (-6)
     perimeter_signal = property_signal(
         times, centroids, perimeters, offset=start)
     volume_signal = property_signal(times, centroids, volumes, offset=start)
+    volume_c_signal = property_signal(
+        times, centroids, volumes_c, offset=start)
 
     if outlier_id:
         outlier_copy = outlier_id.copy()
@@ -313,10 +326,13 @@ def compute_freq(start, end, outlier_id=None, save=False):
                 [perimeter_signal[prev_id, 3], perimeter_signal[next_id, 3]])
             volume_signal[oid, 3] = np.mean(
                 [volume_signal[prev_id, 3], volume_signal[next_id, 3]])
+            volume_c_signal[oid, 3] = np.mean(
+                [volume_c_signal[prev_id, 3], volume_c_signal[next_id, 3]])
             new_cent = np.mean([perimeter_signal[prev_id, 2],
                                 perimeter_signal[next_id, 2]], axis=0)
             perimeter_signal[oid, 2] = new_cent
             volume_signal[oid, 2] = new_cent
+            volume_c_signal[oid, 2] = new_cent
             outlier_copy.pop(0)
     zero_id = perimeter_signal[:, 4] == 'zero'
     single_id = perimeter_signal[:, 4] == 'single'
@@ -326,7 +342,7 @@ def compute_freq(start, end, outlier_id=None, save=False):
 
     axes[0].set_xlabel(r'Frame')
     axes[0].set_ylabel(r'Perimeter [$mm$]')
-    axes[0].set_title(f'Frames {start}-{end}')
+    axes[0].set_title(f'{DATASET}, Frames {start}-{end}')
 
     axes[0].scatter(perimeter_signal[zero_id, 0], perimeter_signal[zero_id, 3], s=12,
                     marker='o', color='b')
@@ -357,28 +373,30 @@ def compute_freq(start, end, outlier_id=None, save=False):
     magnitude_s.sort()
     second_max = magnitude_s[-2]
     idx = int(np.where(magnitude == second_max)[0])
-    x_fft = fftfreq(n_samples, period)[: n_samples//2]
+    x_fft = fftfreq(n_samples, period)[:n_samples//2]
 
     axes[1].set_xlabel('Frequency [$Hz$]')
     axes[1].set_ylabel('Amplitude')
-    axes[1].set_ylim([-.01, magnitude[idx]*1.1])
-    axes[1].plot(x_fft[idx:], magnitude[idx:])
+    #axes[1].set_ylim([-.01, magnitude[idx]*1.1])
+    axes[1].plot(x_fft[0:], magnitude[0:])
     axes[1].scatter(x_fft[idx], magnitude[idx], color='purple',
                     marker='*', s=30, label=fr'$f={x_fft[idx]:.2f}$ $Hz$')
 
-    def sine_func(x_arr, coef_0, coef_1, coef_2, coef_3):
-        return coef_0+coef_1*np.sin(2*np.pi*coef_2*x_arr.astype(float)+coef_3)
-    params, *_ = optimize.curve_fit(sine_func, perimeter_signal[:, 1], perimeter_signal[:, 3],
-                                    p0=[10, 1, 0, x_fft[idx]])
+    # def sine_func(x_arr, coef_0, coef_1, coef_2, coef_3):
+    #     return coef_0+coef_1*np.sin(2*np.pi*coef_2*x_arr.astype(float)+coef_3)
+    # params, *_ = optimize.curve_fit(sine_func, perimeter_signal[:, 1], perimeter_signal[:, 3],
+    #                                 p0=[0, 0, 0, x_fft[idx]])
 
-    vol = np.array([np.mean(volume_signal[:, 3]), np.std(volume_signal[:, 3])])
+    vol = np.array([np.mean(volume_c_signal[:, 3]),
+                    np.std(volume_c_signal[:, 3])])
+    # vol = np.array([volume_signal[0, 3], 1000])
     rho = 6500
-    tau = np.array([1/x_fft[idx], 1/params[3]])
+    tau = np.array([1/x_fft[idx]])
     constant = (3*np.pi/8)*rho/(tau**2)*10**(-9)
-    sigma = vol.reshape(2, 1)@constant.reshape(1, 2)
-    best_sigma = sigma[:, np.argmin(np.abs(sigma[0, :]-1))]
-    worst_sigma = sigma[:, np.argmax(np.abs(sigma[0, :]-1))]
-    print([start, end], vol, best_sigma, worst_sigma, params[3])
+    sigma = vol.reshape(2, 1)@constant.reshape(1, 1)
+    # best_sigma = sigma[:, np.argmin(np.abs(sigma[0, :]-1))]
+    # worst_sigma = sigma[:, np.argmax(np.abs(sigma[0, :]-1))]
+    print([start, end], vol, sigma)  # , params[3])
 
     axes[1].legend()
     fig.tight_layout()
@@ -421,6 +439,7 @@ def property_signal(times, cents, props, offset, init_id=0):
                 distance.append(np.linalg.norm(np.array(cent_1)-cent_0))
             idx = np.argmin(distance)
             signal.append([i+offset, time, cent[idx], prop[idx], dtype])
+
     signal = np.array(signal)
     return signal
 
@@ -446,10 +465,111 @@ def split_property(times, props, offset, zero_id=True):
     return out[:, 0], out[:, 1], out[:, 2]
 
 
+def plot_areas(width, func,  save=False):
+    '''
+    Plots area of a droplet over time for consecutive time frames. Black dots represent one droplet, red crosses are for multiple
+    droplets in the same frame and blue dots means no droplet is detected (area=0). Also, the detachment of droplets is shown in
+    dashed vertical lines obtained by finding the (minimum) peaks of a smoothed version (green curve) of the original signal.
+    Smoothing is done using a hanning window over the data. Datapoints that have multiple values are summed.
+
+    Args:
+    width {int} -- length of the time frames, i.e. a signal with length 100 plotted with width 10 will yield 10 consecutive plots.
+
+    Kwargs:
+    save {bool} -- wether to save each plot as a .pgf file or show it using plt.show().
+    '''
+    if save:
+        latex_plot_config()
+    areas_chunks = chunks(AREAS, width)
+
+    for k, chunk in enumerate(areas_chunks):
+        single_id, single = ([], [])
+        multi_id, multi = ([], [])
+        zero_id = []
+        original_area_id, original_area = ([], [])
+        for i, areas in enumerate(chunk):
+            i = i+OFFSET
+            if len(areas) > 0:
+                original_area.append(func(areas))
+            else:
+                original_area.append(0)
+            original_area_id.append(i+width*k)
+
+            if len(areas) == 0:
+                zero_id.append(i + width*k)
+            else:
+                for area in areas:
+                    if len(areas) == 1:
+                        single_id.append(i+width*k)
+                        single.append(area)
+                    else:
+                        multi_id.append(i+width*k)
+                        multi.append(area)
+        # globular
+        if DATASET.lower() == 'globular':
+            smooth_area = smooth_signal(np.array(original_area), 41)
+            peaks = find_peaks(-smooth_area, height=-5, prominence=2)[0]
+        # spray
+        if DATASET.lower() == 'spray':
+            smooth_area = smooth_signal(np.array(original_area), 7)
+            peaks = find_peaks(smooth_area)[0]
+        # print(len(peaks))
+        # circ = Ellipse(xy=(9600, 5), height=10, width=300, fill=False,
+        #                color='k', linewidth=1)
+        # axes.add_artist(circ)
+        fig, axes = plt.subplots(1, 1, figsize=set_size(aspect_ratio=.5))
+        axes.set_xlabel('Frame')
+        axes.set_ylabel(r'Area [$mm^2$]')
+        axes.set_ylim([-.1, max(max(chunk))+1])
+        axes.scatter(zero_id, np.zeros(len(zero_id)), s=12,
+                     marker='o', color='b', label='Zero droplets')
+        axes.scatter(single_id, single, s=12, marker='.',
+                     color='k', label='Single droplet')
+        axes.scatter(multi_id, multi, s=9, marker='x',
+                     color='r', label='Multiple droplets')
+        axvlines(xs=peaks+width*k+OFFSET, ax=axes, label='Detachment',
+                 linestyle='--', color='k', alpha=0.6)
+        axes.plot(original_area_id,
+                  smooth_area, 'g-', label='Smoothed')
+        # axes.legend()
+        if save:
+            fig.tight_layout()
+            fig.savefig(os.path.join('Output', 'Plots', 'areas',
+                                     f'{DATASET.lower()}_area_{k}.pgf'))
+            plt.close(fig=fig)
+        else:
+            plt.show()
+
+
 if __name__ == "__main__":
-    # free_flight_timestamps = np.array([(34, 72), (289, 342), (1439, 1502, [1466]), (2279, 2341), (2775, 2859), (4197, 4253), (4553, 4577), (4761, 4853),
-    #                                    (4983, 5031), (5278, 5311), (5732, 5816), (6111, 6146), (6589, 6653), (7284, 7337), (7754, 7817), (8795, 8871)])
-    free_flight_timestamps = np.array([(26, 34)])
+    free_flight_timestamps = np.array([(34, 72), (289, 342), (1439, 1502, [1466]), (2279, 2341), (2775, 2859), (4197, 4253), (4553, 4577), (4761, 4853),
+                                       (4983, 5031), (5278, 5311), (5732, 5816), (6111, 6146), (6589, 6653), (7284, 7337), (7754, 7817), (8795, 8871)])
+    # free_flight_timestamps = np.array([(34, 72), (1439, 1502, [1466]), (2279, 2341), (4197, 4253), (4553, 4577), (4761, 4853),
+    #                                    (4983, 5031), (5732, 5816), (6589, 6653), (7754, 7817)])
+    # free_flight_timestamps = np.array(
+    #     [(6, 15), (26, 32), (49, 56), (59, 67), (79, 85), (193, 200), (202, 210), (222, 228)])
     for timestamps in free_flight_timestamps[:4]:
-        matplotlib.use('Qt5Agg')
-        compute_vel(*timestamps, save=False)
+
+        compute_freq(*timestamps, save=False)
+    # stamps = [-8737, -8485, -8040, -7324, -6965, -6491, -
+    #           5996, -5857, -5193, -4852, -4559, -4217, -4002]
+    # stamps = [-5355, -5346, -5334, -5322, -5314, -
+    #           5303, -5293, -5279, -5271, -5262, -5248, -5240, -5230, -5218, -5209, -5198, -5192, -5182]
+    # stamps = [s+5516 for s in stamps]
+    # vols = []
+    # vols_c = []
+    # wfs = 10 * 1000 / 60  # [mm/s]
+    # diameter = 1.143
+    # area = np.pi * (diameter/2)**2  # [mm]
+    # vol_per_s = wfs * area  # [mm3/s]
+    # time_window = (TIME[stamps[-1]]) * 10**(-6)  # [s]
+
+    # total_vol = vol_per_s * time_window  # [mm3]
+    # for s in stamps[1:]:
+    #     vols.append(VOLUMES[s][1])
+    #     vols_c.append(VOLUMES_C[s][1])
+    # print(sum(vols))
+    # print(sum(vols_c))
+    # print(total_vol)
+    # print(time_window)
+    # breakpoint()

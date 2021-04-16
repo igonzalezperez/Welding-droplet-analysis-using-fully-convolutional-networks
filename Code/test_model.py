@@ -13,21 +13,12 @@ from progressbar import progressbar as progress
 from utils import losses
 from utils.misc import chunks
 from utils.preprocessing import normalizeuint8
-from utils.postprocessing import set_size
+from utils.postprocessing import set_size, latex_plot_config
 
 # video settings
 matplotlib.rcParams['animation.ffmpeg_path'] = os.path.abspath(
     'C:\\ffmpeg\\bin\\ffmpeg.exe')
-# output images for LaTex
-matplotlib.use("pgf")
-matplotlib.rcParams.update({
-    "pgf.texsystem": "pdflatex",
-    'font.family': 'serif',
-    'text.usetex': True,
-    'pgf.rcfonts': False,
-})
 # set style
-sns.set()
 
 gpus = tf.config.experimental.list_physical_devices('GPU')
 if gpus:
@@ -44,9 +35,9 @@ if gpus:
 # LaTex \textwidth = 472.03123 pt. Useful for figure sizing
 
 ARCHITECTURE_NAME = 'unet'
-DATASET = 'Spray'
-N_FILTERS = 8
-BATCH_SIZE_TRAIN = 8
+DATASET = 'Globular'
+N_FILTERS = 32
+BATCH_SIZE_TRAIN = 16
 
 EPOCHS = 200
 MODEL_DIR = os.path.join('Output', 'Saved Models',
@@ -80,21 +71,34 @@ def test_model():
 
     data = np.load(os.path.join('Data', 'Image', 'Input',
                                 f"{params['dataset'].lower()}_gray.npz"))
-
     test_size = len(data['images'])
     id_batches = chunks([i for i in range(test_size)], BATCH_SIZE)
     results = []
 
     images = data['images'].astype('float32')
+    #masks = data['masks'].astype('float32')
+
     images = images/255
+    #masks = masks/255
     predictions = []
     for batch in progress(id_batches):
         print(f'Testing batch [{batch[0]} - {batch[-1]}]')
         x_batch = images[batch]
+        #mask_batch = masks[batch]
         y_batch = model.predict(x_batch, verbose=0)
         loss = model.evaluate(x_batch, y_batch, verbose=0)
+
         for pred in y_batch:
             predictions.append(normalizeuint8(pred[..., 0]))
+        # fig, axes = plt.subplots(1, 3, sharex=True, sharey=True)
+        # axes[0].imshow(normalizeuint8(x_batch[0]))
+        # axes[1].imshow(normalizeuint8(mask_batch[0]))
+        # axes[2].imshow(predictions[-1])
+
+        # fig.tight_layout()
+        # fig.savefig(os.path.join('Output', 'Plots', 'train_preds',
+        #                          f'{DATASET}_{batch[0]}_train_pred.png'), transparent=True, dpi=300)
+
         results.append(loss)
     test_loss = {'test_loss': results}
     with open(os.path.join(MODEL_DIR, 'test_loss_dict'), 'wb') as file_pi:
@@ -136,7 +140,7 @@ def plot_loss_samples():
     with open(os.path.join(MODEL_DIR, 'test_loss_dict'), 'rb') as file_pi:
         data = pickle.load(file_pi)
     test_loss = data['test_loss']
-    fig, axes = plt.subplots(1, 1, figsize=set_size(
+    fig_hist, axes = plt.subplots(1, 1, figsize=set_size(
         472.03123, 0.5, aspect_ratio=0.9))
     _, bins, patches = axes.hist(test_loss, log=True)
     for rectangle in patches:
@@ -151,11 +155,10 @@ def plot_loss_samples():
             continue
     axes.set_xlabel('Test loss')
     axes.set_ylabel('Frequency')
-    fig.tight_layout()
+    fig_hist.tight_layout()
     os.makedirs(os.path.join('Output', 'Plots',
                              f'{DATASET.lower()}_test_loss'), exist_ok=True)
-    fig.savefig(os.path.join('Output', 'Plots',
-                             f'{DATASET.lower()}_test_loss', f'{DATASET.lower()}_test_loss.pgf'), bbox_inches='tight')
+
     data_img = np.load(os.path.join(
         'Data', 'Image', 'Input', f'{DATASET.lower()}_rgb.npz'))
 
@@ -164,7 +167,7 @@ def plot_loss_samples():
 
     images = data_img['images'][samples]
     preds = data_pred['preds'][samples]
-
+    figs = [fig_hist]
     for i, img_pred in enumerate(zip(images, preds)):
         img, pred = img_pred
         with sns.axes_style('dark'):
@@ -177,23 +180,38 @@ def plot_loss_samples():
         axes[0].imshow(img)
         axes[0].set_title(f'Frame {samples[i]}')
         axes[1].imshow(pred, cmap='gray')
-        axes[1].set_title(f'Test loss = {test_loss[samples[i]]:.4f}')
+        #axes[1].set_title(f'Test loss = {test_loss[samples[i]]:.4f}')
 
         os.makedirs(os.path.join('Output', 'Plots',
                                  f'{DATASET.lower()}_test_loss', f'{DATASET.lower()}_test_loss_{i+1}'), exist_ok=True)
-        fig.savefig(os.path.join('Output', 'Plots', f'{DATASET.lower()}_test_loss', f'{DATASET.lower()}_test_loss_{i+1}',
-                                 f'{DATASET.lower()}_test_loss_{i+1}.pgf'), bbox_inches='tight')
+        figs.append(fig)
+
+    for i, fig in enumerate(figs):
+        if i == 0:
+            fig_hist.savefig(os.path.join('Output', 'Plots',
+                                          f'{DATASET.lower()}_test_loss', f'{DATASET.lower()}_test_loss.png'), bbox_inches='tight', transparent=True, dpi=300)
+        else:
+            fig.savefig(os.path.join('Output', 'Plots', f'{DATASET.lower()}_test_loss', f'{DATASET.lower()}_test_loss_{i}',
+                                     f'{DATASET.lower()}_test_loss_{i}.png'), bbox_inches='tight', transparent=True, dpi=300)
+    latex_plot_config()
+    for i, fig in enumerate(figs):
+        if i == 0:
+            fig_hist.savefig(os.path.join('Output', 'Plots',
+                                          f'{DATASET.lower()}_test_loss', f'{DATASET.lower()}_test_loss.pgf'), bbox_inches='tight')
+        else:
+            fig.savefig(os.path.join('Output', 'Plots', f'{DATASET.lower()}_test_loss', f'{DATASET.lower()}_test_loss_{i}',
+                                     f'{DATASET.lower()}_test_loss_{i}.pgf'), bbox_inches='tight')
 
 
 def main():
     '''
     Main.
     '''
-    test_model()
+    plot_loss_samples()
 
 
 # %%MAIN
 
 
 if __name__ == "__main__":
-    plot_loss_samples()
+    main()

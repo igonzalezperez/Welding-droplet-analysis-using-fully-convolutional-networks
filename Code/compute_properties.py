@@ -6,6 +6,7 @@ import os
 import pickle
 import cv2
 import numpy as np
+import matplotlib.pyplot as plt
 from progressbar import progressbar as progress
 from scipy.spatial import distance
 from cv2 import cv2
@@ -17,9 +18,9 @@ from utils.postprocessing import time_seq
 PX_TO_MM = 1.143/26
 
 ARCHITECTURE_NAME = 'unet'
-DATASET = 'Globular'
-N_FILTERS = 32
-BATCH_SIZE_TRAIN = 16
+DATASET = 'Spray'
+N_FILTERS = 8
+BATCH_SIZE_TRAIN = 8
 EPOCHS = 200
 PREDS_DIR = os.path.join('Output', 'Predictions',
                          f'{ARCHITECTURE_NAME.lower()}_{DATASET.lower()}_{N_FILTERS}_{BATCH_SIZE_TRAIN}_{EPOCHS}_preds.npz')
@@ -40,27 +41,10 @@ def compute_properties(img):
     area = []
     perimeter = []
     volume = []
+    volume_corrected = []
     for cnt in contours:
         mmt = cv2.moments(cnt)
         if mmt['m00'] > 20:  # ignore really small contours
-            # plt.imshow(thresh)
-            # plt.show()
-            # x = ellipse[0][0]
-            # y = ellipse[0][1]
-            # a = ellipse[1][0]/2
-            # b = ellipse[1][1]/2
-            # alpha = ellipse[2]*np.pi/180
-            # x_a = x + a*np.cos(alpha)
-            # y_a = y + a*np.sin(alpha)
-            # x_b = x + b*np.cos(np.pi/2+alpha)
-            # y_b = y + b*np.sin(np.pi/2+alpha)
-            # plt.plot(x, y, 'rx')
-            # plt.plot(x_a, y_a, 'rx')
-            # plt.plot(x_b, y_b, 'rx')
-            # thresh = cv2.ellipse(
-            #     np.zeros((thresh.shape[0], thresh.shape[1], 3)), ellipse, (255, 255, 255), 2)
-            # plt.imshow(thresh)
-            # plt.show()
             try:
                 c_x = mmt['m10']/mmt['m00']
                 c_y = mmt['m01']/mmt['m00']
@@ -70,16 +54,37 @@ def compute_properties(img):
                 centroids.append((c_x, c_y))
 
                 area.append(mmt['m00']*PX_TO_MM**2)
-                perimeter.append(cv2.arcLength(cnt, True)*PX_TO_MM)
+                perimeter.append(cv2.arcLength(cnt, True)*PX_TO_MM*0.86)
 
                 ellipse = cv2.fitEllipse(cnt)
                 semi_major = max(ellipse[1])/2
                 semi_minor = min(ellipse[1])/2
                 vol = (4/3)*np.pi*semi_minor**2*semi_major
                 volume.append(vol*PX_TO_MM**3)
+                volume_corrected.append(vol*PX_TO_MM**3*0.86**3)
+                # plt.imshow(thresh)
+                # plt.show()
+                # x = ellipse[0][0]
+                # y = ellipse[0][1]
+                # a = ellipse[1][0]/2
+                # b = ellipse[1][1]/2
+                # alpha = ellipse[2]*np.pi/180
+                # x_a = x + a*np.cos(alpha)
+                # y_a = y + a*np.sin(alpha)
+                # x_b = x + b*np.cos(np.pi/2+alpha)
+                # y_b = y + b*np.sin(np.pi/2+alpha)
+                # plt.plot(x, y, 'rx')
+                # plt.plot(x_a, y_a, 'rx')
+                # plt.plot(x_b, y_b, 'rx')
+                # plt.imshow(thresh)
+                # thresh = cv2.ellipse(
+                #     np.zeros((thresh.shape[0], thresh.shape[1], 3)), ellipse, (255, 255, 255), 2)
+                # plt.imshow(thresh)
+                # plt.show()
+                # breakpoint()
             except ZeroDivisionError:
                 continue
-    return centroids_float, centroids, area, perimeter, volume
+    return centroids_float, centroids, area, perimeter, volume, volume_corrected
 
 
 def save_properties():
@@ -92,6 +97,7 @@ def save_properties():
     area_arr = []
     perim_arr = []
     vol_arr = []
+    vol_corrected_arr = []
     time_list = []
     time_cycle = time_seq()
 
@@ -107,18 +113,21 @@ def save_properties():
             time_list.append(last_time + next(time_cycle))
         except IndexError:
             time_list.append(0)
-        cents_float, cents, area, perimeter, volume = compute_properties(pred)
+        cents_float, cents, area, perimeter, volume, volume_corrected = compute_properties(
+            pred)
         cents_float_arr.append(cents_float)
         cents_arr.append(cents)
         area_arr.append(area)
         perim_arr.append(perimeter)
         vol_arr.append(volume)
+        vol_corrected_arr.append(volume_corrected)
     geometry = {
         'centroids_float': cents_float_arr,
         'centroids': cents_arr,
         'areas': area_arr,
         'perimeters': perim_arr,
         'volumes': vol_arr,
+        'volumes_corrected': vol_corrected_arr,
         'time': time_list
     }
     with open(os.path.join('Output', 'Geometry', f'{ARCHITECTURE_NAME.lower()}_{DATASET.lower()}_{N_FILTERS}_{BATCH_SIZE_TRAIN}_{EPOCHS}_geometry.pickle'), 'wb') as data_file:
