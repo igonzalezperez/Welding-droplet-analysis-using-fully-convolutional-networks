@@ -32,13 +32,7 @@ which is just the sum of every pixel intensity across the image, i.e., its area.
 Finally, it is also possible to measure the outline of a contour by counting its bordering pixels, that is perimeter which can be done using the \texttt{opencv} library.
 
 \subsection{Physical properties}\label{sec:physical}
-In this thesis the images come from videos, so the centroids can then be used to compute velocity and acceleration from consecutive frames simply by taking frame to frame distance and time differences if the frame rate and pixel to distance conversion are available (see Chapter \ref{chap:dataset} for these conversions). In particular, numerical approximations using central differences are used, in which the derivative of a function at point $x$ is
-\begin{align*}
-    \frac{df}{dx}=\frac{f(x+h)-f(x-h)}{2h}
-\end{align*}
-where $h$ is a sufficiently small number. In this case, $h$ is the sampling period and $f(x)$ is the position or velocity of the centroid at every sampling time. In the borders it is not possible to apply central differences, so forward and backward differentiation is used at the start and the end of the data respectively.
-
-Another relevant property that can be obtained is the surface tension of the droplet using Rayleigh's formula \cite{rayleigh}
+A relevant property that can be obtained is the surface tension of the droplet using Rayleigh's formula \cite{rayleigh} which is valid for sphere-like droplets
 \begin{align}\label{eq:rayleigh}
     \sigma = \frac{3\pi \rho V}{8\tau^2}
 \end{align}

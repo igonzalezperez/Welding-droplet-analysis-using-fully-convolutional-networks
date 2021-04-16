@@ -25,7 +25,7 @@ In the deep learning framework, a common family of models used for segmentation 
 
 Particularly, the U-Net model, which has had great success in tasks using biomedicine image data, like alveolar segmentation and mitochondria detection \cite{Duong, Casser} is an architecture of interest for this thesis. These datasets have rather simple subjects compared to other tasks in traffic segmentation or face recognition and the problem is mainly subject-background separation, which is the same scenario as in the GMAW segmentation problem. Additionally, the U-Net model also has variants that have been used in similar problems like the DeconvUnet and MultiResUnet \cite{Noh, Ibtehaz}.
 
-For these reasons, this thesis aims to use Deep Learning models to be able to segment a large number of images and calculate geometric and kinematic features of droplets from a GMAW process in an automated and reliable manner to then calculate kinematic and geometric properties that characterize the process.
+For these reasons, this thesis aims to use Deep Learning models to be able to segment a large number of images and calculate geometric and physical features of droplets from a GMAW process in an automated and reliable manner to then calculate kinematic and geometric properties that characterize the process.
 
 \section{Motivation}
 
@@ -33,14 +33,17 @@ The purpose of this work is to further develop the automated analysis of a weldi
 
 \section{Aim of the work}
 \subsection{General objective}
-Propose a deep learning supervised segmentation model for high speed video recordings of globular and spray metal transfer for the posterior calculation of relevant properties of the droplets such as position, velocity, acceleration, perimeter, area, volume and surface tension.
+Develop and test a framework for the analysis of GMAW videos using a supervised deep learning segmentation model and posterior parameter computation through image and signal processing.
 
 \subsection{Specific objectives}
 \begin{itemize}
-    \item Retrieve image data from High Speed Videos of globular and spray metal transfer processes to build a dataset.
-    \item Manually label images in order to have ground truth data to train a supervised deep learning model.
-    \item Implement deep learning segmentation models, namely fully convolutional networks, to generate segmentation masks for every image in their respective datasets (globular and spray transfer). Measure error metrics such as Jaccard distance. Then, choose the best performing model and compare obtained masks with original images
-    \item Use the generated masks to calculate properties of the droplet and the process in general: Position, velocity, acceleration, perimeter, area, volume, detachment frequency and surface tension.
+    \item Investigate the literature and find previous work on the subject to have as a baseline for comparison.
+    \item Construct a working dataset from GMAW video by manually labeling segmentation maps and artificially augment them.
+    \item Implement deep learning fully convolutional network models for semantic segmentation in Tensorflow.
+    \item Validate and compare models to choose the best performing one.
+    \item Test the model by generating segmentation maps on an entire video.
+    \item Calculate relevant properties of the process using image and signal processing on the segmentation maps. Properties include position, velocity, acceleration, perimeter, area, volume, detachment frequency and surface tension.
+    \item Compare the results with the literature and assess the effectiveness of the proposed framework.
 
 \end{itemize}
 

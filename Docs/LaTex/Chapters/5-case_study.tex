@@ -6,11 +6,11 @@ The study case consists in analyzing high speed video data from GMAW processes, 
 
 After inspecting the metadata of the videos in PCC, they are read in \texttt{python} using the \texttt{pycine} library\footnote{\url{https://github.com/OTTOMATIC-IO/pycine}}. Then, each video is stored into an \texttt{.npz} file. In figures \ref{fig:glob_samples} and \ref{fig:spray_samples} frames of each transfer mode can be seen, particularly the main characteristic of larger droplets in globular and smaller droplets in spray\footnote{Similar videos found at \url{https://sites.ualberta.ca/~ccwj/videos/pages/Intro\%20High\%20Speed/}}.
 
-Notice that later, to calculate physical properties of the process, there has to be a relationship between the pixel and real distance. This can be done using the wire's diameter, since that is a fixed length that is always visible in the image. Using that relationship, the pixel to distance conversion is
+Notice that later, to calculate physical properties of the process, there has to be a relationship between the pixels and real distance. This can be done using the wire's diameter, since that is a fixed length that is always visible in the image. Using that relationship, the pixel to distance conversion is
 
 \begin{align}
-    \text{Wire's diameter} &= 0.045\;in = 26\;px = 1.143\;mm \nonumber\\
-    1\;px &= 0.0439615\;mm =4.39615\cdot 10^{-5}\;m
+    \text{Wire's diameter} &= 0.045\;in = 1.143\;mm = 26\;px \nonumber\\
+    \xrightarrow{}1\;px &= 0.0439615\;mm =4.39615\cdot 10^{-5}\;m
     \label{eq:px_to_mm}
 \end{align}
 
@@ -23,7 +23,7 @@ Notice that later, to calculate physical properties of the process, there has to
 Electrode       & $ER70S-6$             & \multicolumn{1}{l|}{} & \multicolumn{1}{l|}{Shielding gas}     & \multicolumn{1}{l|}{$85\%$ $Ar$, $15\%$ $CO_2$} \\ \cline{1-2} \cline{4-5} 
 Size            & $0.045''$ ($1.2$ $mm$)     & \multicolumn{1}{l|}{} & \multicolumn{1}{l|}{Number of frames}  & \multicolumn{1}{l|}{$9947$}              \\ \cline{1-2} \cline{4-5} 
 Wire feed speed & $175$ $ipm$ ($4.4$ $m/min$) & \multicolumn{1}{l|}{} & \multicolumn{1}{l|}{Resolution}        & \multicolumn{1}{l|}{$352 \times 296$}           \\ \cline{1-2} \cline{4-5} 
-Voltage         & $33$ $V$                 & \multicolumn{1}{l|}{} & \multicolumn{1}{l|}{Frame rate} & \multicolumn{1}{l|}{$3000$}              \\ \cline{1-2} \cline{4-5} 
+Voltage         & $33$ $V$                 & \multicolumn{1}{l|}{} & \multicolumn{1}{l|}{Frame rate} & \multicolumn{1}{l|}{$3000\;Hz$}              \\ \cline{1-2} \cline{4-5} 
 Travel speed    & $20$ $ipm$ ($0.5$ $m/min$)  & \multicolumn{1}{l|}{} & \multicolumn{1}{l|}{Period}            & \multicolumn{1}{l|}{$333.3$ $\mu s$}           \\ \cline{1-2} \cline{4-5} 
 CTWD & $0.7''$ ($18$ $mm$) &\multicolumn{1}{l|}{} & \multicolumn{1}{l|}{File size}            & \multicolumn{1}{l|}{$2.01$ $Gb$}  \\ \cline{1-2}\cline{4-5} 
 \end{tabular}
@@ -38,7 +38,7 @@ CTWD & $0.7''$ ($18$ $mm$) &\multicolumn{1}{l|}{} & \multicolumn{1}{l|}{File siz
 Electrode       & $ER70S-6$             & \multicolumn{1}{l|}{} & \multicolumn{1}{l|}{Shielding gas}     & \multicolumn{1}{l|}{$85\%$ $Ar$, $15\%$ $CO_2$} \\ \cline{1-2} \cline{4-5} 
 Size            & $0.045''$ ($1.2$ $mm$)     & \multicolumn{1}{l|}{} & \multicolumn{1}{l|}{Number of frames}  & \multicolumn{1}{l|}{$6691$}              \\ \cline{1-2} \cline{4-5} 
 Wire feed speed & $400$ $ipm$ ($10$ $m/min$) & \multicolumn{1}{l|}{} & \multicolumn{1}{l|}{Resolution}        & \multicolumn{1}{l|}{$352 \times 352$}           \\ \cline{1-2} \cline{4-5} 
-Voltage         & $35$ $V$                 & \multicolumn{1}{l|}{} & \multicolumn{1}{l|}{Frame rate} & \multicolumn{1}{l|}{$3000$}              \\ \cline{1-2} \cline{4-5} 
+Voltage         & $35$ $V$                 & \multicolumn{1}{l|}{} & \multicolumn{1}{l|}{Frame rate} & \multicolumn{1}{l|}{$3000\;Hz$}              \\ \cline{1-2} \cline{4-5} 
 Travel speed    & $20$ $ipm$ ($0.5$ $m/min$)  & \multicolumn{1}{l|}{} & \multicolumn{1}{l|}{Period}            & \multicolumn{1}{l|}{$333.3$ $\mu s$}           \\ \cline{1-2} \cline{4-5} 
 CTWD & $0.7''$ ($18$ $mm$) &\multicolumn{1}{l|}{} & \multicolumn{1}{l|}{File size}            & \multicolumn{1}{l|}{$1.61$ $Gb$}  \\ \cline{1-2}\cline{4-5} 
 \end{tabular}
@@ -91,7 +91,7 @@ CTWD & $0.7''$ ($18$ $mm$) &\multicolumn{1}{l|}{} & \multicolumn{1}{l|}{File siz
 \end{figure}
 
 \section{Labeling}
-In order to train a supervised deep learning model, manual labels are made using the images as input. This is done using the LabelBox platform which allows to make such segmentation and then download the pairs of input image and corresponding mask. A number of 150 images were segmented for each transfer mode. Some of the resulting masks are shown in figures \ref{fig:glob_sample_masks} and \ref{fig:spray_sample_masks} for globular and transfer respectively.
+In order to train a supervised deep learning model, manual labels are made using the images as input. This is done using the LabelBox platform which allows to make such segmentation and then download the pairs of input image and corresponding mask. A number of 150 images were segmented for each transfer mode. Examples are shown in figures \ref{fig:glob_sample_masks} and \ref{fig:spray_sample_masks} for globular and transfer respectively.
 
 \begin{figure}[htbp]
     \begin{subfigure}[b]{0.4\textwidth}
@@ -128,9 +128,9 @@ The selection of the training images is not random, frames are chosen to have as
 Notice that although the images have color, it is mostly a gradient from white to black through different intensities of magenta so the images are used as grayscale because the same information can be captured with a third of file size.
 
 \section{Data augmentation}
-A total of 150 images were labeled for each transfer mode. Since the number of images is low, data augmentation is used applying several alterations to the original images and labels. Each example is augmented such that it produces 5 different training examples. Therefore, the augmented dataset has 750 images for each transfer mode. In figure \ref{fig:augmented_sample}\footnote{Image \ref{fig:augmented_sample} has different colors compared to images in previous figures, this is due to the color map used when plotting the grayscale image in \texttt{python}. Nonetheless, pixel values are the same.} an example of an augmented input is shown and in table \ref{table:dataset_summary} a summary of the dataset information is shown.
+A total of 150 images were labeled for each transfer mode. Since the number of images is low, data augmentation is used applying several alterations to the original images and labels. Each example is augmented such that it produces 5 different training examples. Therefore, the augmented dataset has 750 images for each transfer mode. In figure \ref{fig:augmented_sample}\footnote{Image \ref{fig:augmented_sample} has different colors compared to images in previous figures, this is due to the color map used when plotting the grayscale image in \texttt{matplotlib}. Nonetheless, pixel values are the same.} an example of an augmented input is shown and in table \ref{table:dataset_summary} a summary of the dataset information is shown.
 
-The augmentations were made in \texttt{python} using the library \texttt{imgaug} and are listed as follows: 
+Augmentations are made in \texttt{python} using the library \texttt{imgaug} and are listed as follows: 
 \begin{itemize}
     \item Pixel dropout between $0\%$ and $5\%$, which means a probability is sampled uniformly such that $p \in [0, 0.05]$ for each augmented image so that every pixel has a probability $p$ of being turned to zero. In practice, every image will lose random pixels up to a maximum of $5\%$ of the whole image.
     \item Rotations between $-45^\circ$ and $45^\circ$.
@@ -150,16 +150,15 @@ Notice in figure \ref{fig:augmented_sample} that the sampling of parameters with
 
 \begin{table}
 \centering
-\caption[Dataset summary]{Dataset summary per transfer mode.}
+\caption{Dataset summary per transfer mode.}
 \label{table:dataset_summary}
-
-    \begin{tabular}{|c|c|}
-        \hline
-        \begin{tabular}[c]{@{}c@{}}Manually \\ segmented images\end{tabular} & $150$                                                                          \\ \hline
-        Augmented images & $750$           \\ \hline
-        Shape                                                                & \begin{tabular}[c]{@{}c@{}}$352\times 288$ (globular)\\ $352\times 352$ (spray)\end{tabular} \\ \hline
-        Channels         & $1$ (grayscale) \\ \hline
-    \end{tabular}
+\begin{tabular}{|c|c|}
+\hline
+\begin{tabular}[c]{@{}c@{}}Complete\\ dataset\end{tabular} & \begin{tabular}[c]{@{}c@{}}9947 (globular)\\ 6691 (spray)\end{tabular}                       \\ \hline
+\begin{tabular}[c]{@{}c@{}}Manually\\ segmented\end{tabular} & 150           \\ \hline
+Augmented                                                    & 750           \\ \hline
+Shape                                                      & \begin{tabular}[c]{@{}c@{}}$352\times 296$ (globular)\\ $352\times 352$ (spray)\end{tabular} \\ \hline
+Channels|                                                    & 1 (grayscale) \\ \hline
+\end{tabular}
 \end{table}
-
 

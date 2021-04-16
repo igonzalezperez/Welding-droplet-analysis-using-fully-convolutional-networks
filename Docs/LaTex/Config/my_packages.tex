@@ -9,8 +9,60 @@
 \usetikzlibrary{calc}
 \usepackage{color}
 \usepackage{pgfplots}
-\pgfplotsset{compat=newest, every axis/.append style={tick label style={/pgf/number format/fixed},font=\scriptsize,ylabel near ticks,xlabel near ticks,grid=major}}
-\pgfplotsset{}
+\usepackage{pgfplots}
+\pgfplotsset{
+    compat=1.16,
+    %made the beginnings of a second axis style, because I figured it needs to be different for grouped
+    my second axis style/.style={
+    width=\linewidth,
+    height=0.35\linewidth,
+    bar width=0.2, %<- changed
+    enlarge x limits={abs=0.45},    % <-- changed to absolute coordinates
+    ymin=0,
+    legend style={
+        at={(0.5,1.15)},    % <-- adapted
+        anchor=north,       % <-- changed from `north'
+        legend columns=3,
+    },
+    ylabel={PR\textsubscript{A}},
+    xtick=data,
+    axis lines*=left,
+    ymajorgrids,
+    %
+    table/x=x,
+    },
+    % created a style for the common `ybar' options
+    my second ybar style/.style={
+        ybar,
+        my ybar legend,            % <-- change legend image accordingly
+        #1!50!black,
+        fill=white!70!black,, %<- changed back
+        nodes near coords,      % <-- moved from `axis' options here
+        % state absolute positions for the `nodes near coords'
+        scatter/position=absolute,
+        node near coords style={
+            % state where the nodes should appear
+            at={(\pgfkeysvalueof{/data point/x},0.5*\pgfkeysvalueof{/data point/y})},
+            anchor=center,rotate=90, %<-added
+            % make the font a bit smaller
+            font=\footnotesize,
+            /pgf/number format/.cd,
+            fixed,
+            precision=2,
+            zerofill,
+        },
+    },
+    my ybar legend/.style={
+        /pgfplots/legend image code/.code={
+            \draw [
+            ##1,
+            /tikz/.cd,
+            yshift=-0.25em,
+            ] (0cm,0cm) rectangle (3pt,0.8em);
+        },
+    },
+}
+
 \usepackage{pgf-umlsd}
 \usepackage[]{fp}
 
@@ -20,6 +72,20 @@
 \usepackage{longtable}
 
 \usepgfplotslibrary{groupplots}
+\usepgfplotslibrary{external}   
+\tikzexternalize[
+    prefix={tikz/},
+    only named,
+]
+\tikzset{
+    export as png/.style={
+        external/system call/.add={}{
+            && convert -density #1 -transparent white "\image.png"
+        },
+    },
+    export as png/.default={200},
+}
+
 \FPset{totalOffset}{0}
 
 \usepackage{import}

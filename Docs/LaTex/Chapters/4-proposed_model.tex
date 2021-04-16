@@ -27,21 +27,21 @@ The architectures used are FCN based, so they share they building blocks shown i
 \begin{figure}
     \centering
     \resizebox{\linewidth}{!}{
+    \input{Graphs/deconvnet}
+    }
+    \caption[Illustration of a DeconvNet contracting path]{Illustration of a DeconvNet contracting path. A VGGNet architecture is used and then mirrored in the expanding path. At the top of each block the kernel shape is shown, below are depicted the number of feature maps per convolution. Finally, $I$ is the input size which is halved after each pooling layer. Source: Adapted from \url{https://github.com/HarisIqbal88/PlotNeuralNet}.}
+    \label{fig:deconv}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \resizebox{\linewidth}{!}{
     \input{Graphs/unet}
     }
     \caption[Illustration of a U-Net architecture]{Illustration of a U-Net architecture. The architecture is divided in a contracting path and an expanding path. The contracting path has conv (yellow)/conv/pool (red) blocks. The expanding path has transposed-conv (blue)/conv/conv blocks. Dimensions in the expanding path mirror the contracting path. Each convolution before pooling is used as a skip layer and concatenated with the corresponding shape in the expanding path. The final layer reduces the feature maps to one and applies a softmax function for pixel-wise classification. Convolution kernels are $3\times 3$ while pooling kernels are $2\times 2$ so the size is halved at each block. Source: Adapted from \url{https://github.com/HarisIqbal88/PlotNeuralNet}.}
     \label{fig:unet}
 \end{figure}
 
-\begin{figure}
-    \centering
-    \resizebox{\linewidth}{!}{
-    \input{Graphs/deconvnet}
-    }
-    \caption[Illustration of a DeconvNet contracting path]{Illustration of a DeconvNet contracting path. A VGGNet architecture is used and then mirrored in the expanding path. At the top of each block the kernel shape is shown, below are depicted the number of feature maps per convolution. Finally, $I$ is the input size which is halved after each pooling layer. Source: Adapted from \url{https://github.com/HarisIqbal88/PlotNeuralNet}.}
-    \label{fig:deconv}
-\end{figure}
-    
 \begin{figure}
     \centering
     \resizebox{\linewidth}{!}{
@@ -69,24 +69,22 @@ As stated earlier, to train a supervised neural network it is necessary to have 
 \end{align*}
 where $|\cdot|$ is the cardinality of the set. Hence, if the overlap is perfect $|A\cap B|=|A\cup B|\xrightarrow[]{} J=1$. Conversely, if there is no overlap $|A\cap B|=0\xrightarrow{} J=0$. In a segmentation mapping, $|A\cap B|$ can be computed as the element-wise multiplication of $A$ and $B$, and then sum the result. Furthermore, $|\cdot|$ is computed as the sum of the matrix' elements. The score is computed over all classes and then averaged.
     
-In order to minimize a loss function using the Jaccard index, the Jaccard distance is used and is given by
+In order to minimize a loss function using the Jaccard index, the Jaccard distance is defined and is given by
 \begin{align*}
     d_j(A,B)=1-J(A,B)
 \end{align*}
 
 \section{Validation}
-The proposed architectures have to be validated to ensure that the best results are obtained. Then, every model is subject to a grid search. The parameters used for grid search are shown in table \ref{table:grid_search}. Also, each model (i.e. each point in the grid) is run using $k$-fold cross validation with $k=4$. That is, each model is run four times with a different and disjoint $25\%$ of validation data each time. The average loss in the validation set is used to compare the models' performances and choose the best one.
+The proposed architectures have to be validated to ensure that the best results are obtained. Then, every model is subject to a grid search. The parameters used for grid search are shown in table \ref{table:grid_search}. Also, each model (i.e. each point in the grid) is run using $k$-fold cross validation with $k=4$. That is, each model is run four times with a different and disjoint $25\%$ of validation data each time. The average loss in the validation set is used to compare the models' performances and choose the best one. The parameters are considered for each proposed architecture. Also, separate models are trained for globular and spray datasets.
 
 \begin{table}
-\caption[Hyperparameters used for grid search]{Hyperparameters used for grid search.}
-\label{table:grid_search}
 \centering
+\caption{Hyperparameters used for grid search. Every parameter is used for each proposed architecture (DeconvNet, U-Net and MultiResUnet) and each dataset (globular and spray) is trained separately.}
+\label{table:grid_search}
 \begin{tabular}{|c|c|c|c|c|}
 \cline{1-2} \cline{4-5}
-Dataset & (Globular, Spray) &  & \begin{tabular}[c]{@{}c@{}}Number \\ of filters\end{tabular} & (8, 16, 32) \\ \cline{1-2} \cline{4-5} 
-Epochs & \begin{tabular}[c]{@{}c@{}}Early stopping\\ Max: 200 epochs\\ Patience: 20 epochs\end{tabular} &  & \begin{tabular}[c]{@{}c@{}}Learning\\ rate\end{tabular} & (.01, .005, .001) \\ \cline{1-2} \cline{4-5} 
-\begin{tabular}[c]{@{}c@{}}Loss\\ function\end{tabular} & \begin{tabular}[c]{@{}c@{}}Jaccard\\ distance\end{tabular} &  & Optimizer & Adam \\ \cline{1-2} \cline{4-5} 
-\begin{tabular}[c]{@{}c@{}}Batch\\ size\end{tabular} & (8, 16, 32) &  & Architecture & \begin{tabular}[c]{@{}c@{}}(U-Net, DeconvNet,\\ MultiResUnet)\end{tabular} \\ \cline{1-2} \cline{4-5} 
+Batch size                                              & 8, 16, 32       &  & Epochs        & \begin{tabular}[c]{@{}c@{}}Max: 200\\ Patience: 20\end{tabular} \\ \cline{1-2} \cline{4-5} 
+Filters                                                 & 8, 16, 32       &  & Loss function & \begin{tabular}[c]{@{}c@{}}Jaccard\\ distance\end{tabular}      \\ \cline{1-2} \cline{4-5} 
+\begin{tabular}[c]{@{}c@{}}Learning\\ rate\end{tabular} & .01, .005, .001 &  & Optimizer     & Adam                                                            \\ \cline{1-2} \cline{4-5} 
 \end{tabular}
 \end{table}
-

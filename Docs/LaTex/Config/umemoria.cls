@@ -125,6 +125,11 @@
 \let\guia\setguia
 \let\setguia\relax
 
+\global\let\@coguia\@empty
+\newcommand{\setcoguia}[1]{\def\@coguia{#1}}
+\let\coguia\setcoguia
+\let\setcoguia\relax
+
 \global\let\@depto\@empty
 \newcommand{\setdepto}[1]{\def\@depto{#1}}
 \let\depto\setdepto
@@ -164,7 +169,12 @@
 			\foreach \x [count=\xi] in \@guia {
 				PROFESORA GUÍA\ifnum\xi>1 \ \xi \fi:\\ \MakeUppercase\x\\
 			}
-
+        
+        	\vspace{.2cm}
+			\foreach \x [count=\xi] in \@coguia {
+				PROFESOR CO-GUÍA\ifnum\xi>1 \ \xi \fi:\\ \MakeUppercase\x\\
+			}
+			
 		\vspace{1cm}
 			MIEMBROS DE LA COMISIÓN:\\
 			\foreach \x in \@comision { \MakeUppercase\x\\ }

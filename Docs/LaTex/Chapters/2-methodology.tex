@@ -18,7 +18,7 @@ This work explores the use of supervised deep learning segmentation models to pr
     A handful of models are used to be compared, these are the U-Net, DeconvUnet and MultiResUnet, they are built in \texttt{tensorflow} 2.3.1. The models are trained with image files from the sampled ones that have labels, then the rest of the images without labels are tested. Since there are two different transfer modes considered, globular and spray, they are trained separately, so for each network there are two trained models. Moreover, several validation methods are used to ensure the best results such as $k$-fold cross validation and grid searching, all of which are described in chapter \ref{chap:background}.\\
     
     \item \textbf{Postprocess segmentation masks:}
-    The outputs of the segmentation network are then processed using \texttt{opencv} and \texttt{scipy} to calculate several relevant characteristics such as position, velocity, area and frequency.\\
+    The outputs of the segmentation network are then processed using \texttt{opencv} and \texttt{scipy} to calculate several relevant characteristics such as position, velocity, acceleration, area, volume and surface tension among others.\\
     
     \item \textbf{Analysis and conclusion:}
     The proposed models are compared to discuss about which one would be better for the task. Additionally, the postprocessed features are discussed in terms of their usefulness when optimizing or designing a GMAW process. Finally, future prospects of deep learning techniques in the welding industry are presented.
@@ -37,7 +37,7 @@ The computational requirements for this thesis were met by a desktop computer pr
 Additionally, the software and libraries needed include:
 \begin{itemize}
     \item Phantom Camera Control software to view \texttt{.cine} files and inspect metadata.
-     \item LabelBox tools for segmentation of images.
+     \item LabelBox tools for manual segmentation of images.
     \item \texttt{Python} 3.8 as programming language.
     \item \texttt{Pycine} library to read \texttt{.cine} files in \texttt{python}\footnote{\url{https://github.com/OTTOMATIC-IO/pycine}}.
     \item \texttt{Imgaug} for augmenting images.
@@ -47,6 +47,6 @@ Additionally, the software and libraries needed include:
     \item Dependencies required for the above to work properly.
 \end{itemize}
 
-Regarding the dataset, it was provided by the Canadian Centre for Welding and Joining (CCWJ) at the University of Alberta, this collaboration was carried out through the Emerging Leaders in the Americas Program (ELAP) which awarded the author a scholarship to undergo an investigation internship to the University of Alberta for a period of six months.
+Regarding the dataset, it was provided by the Canadian Centre for Welding and Joining (CCWJ) at the University of Alberta, this collaboration was carried out through the Emerging Leaders in the Americas Program (ELAP) which awarded the author a scholarship to undergo an investigation internship at the University of Alberta for a period of six months.
 
 Finally, version control of the project is carried out using Git. All of the code, results and related documents can be found in GitHub\footnote{\url{https://github.com/igonzalezperez/Welding-droplet-analysis-using-fully-convolutional-networks}.}.

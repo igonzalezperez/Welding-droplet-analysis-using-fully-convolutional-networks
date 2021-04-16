@@ -1,19 +1,19 @@
 \chapter{Results and analysis}\label{chap:results}
-In this chapter, the results are shown and discussed covering the model selection process, training, testing and post processing. It is worth mentioning that since this thesis is focused on analyzing videos, there is a great value in having video results as well but because of the format, only sampled images can be shown. Nevertheless, in the GitHub project\footnote{\url{https://github.com/igonzalezperez/Welding-droplet-analysis-using-fully-convolutional-networks}.} are all the video results which generate the images shown in this chapter. These are specially useful for analyzing the post processing results.
+In this chapter, results are shown and discussed covering the model selection process, training, testing and post processing. It is worth mentioning that since this thesis is focused on analyzing videos, there is a great value in having video results as well but because of the format, only sampled images can be shown. Nevertheless, in the GitHub project\footnote{\url{https://github.com/igonzalezperez/Welding-droplet-analysis-using-fully-convolutional-networks}.} are available all of the video results which generate the images shown in this chapter. These are specially useful for analyzing some of the post processing results.
 
 
 \section{Grid search}
-The three proposed architectures' hyperparameters are optimized through grid search (see table \ref{table:grid_search}). Also, 4-fold cross validation is performed so that every model is run over four different and disjoint combinations of training and validation set. Therefore, every model yields four training loss and validation loss values which can then be averaged and used to compare between models. 
+The three proposed architectures' hyperparameters are optimized through grid search (see table \ref{table:grid_search}). Also, 4-fold cross validation is performed so that every model is run over four different and disjoint combinations of training and validation set. Therefore, every model yields four training and validation loss values which can then be averaged and used to compare between models. 
 
 In tables \ref{table:globular_best_models} and \ref{table:spray_best_models} the three best models for each proposed architecture are shown for globular and spray transfer respectively\footnote{All of the results of the grid search are shown in Appendix \ref{appendix_gs}}. The results show that the best model is the U-Net in every case, while the MultiResUnet has the worst performance and the DeconvNet is between the other two, closer to the MultiResUnet. Hence the U-Net architecture seems suitable to solve the task at hand. 
 
-The low performance of the MultiResUnet can be explained by the fact that it is considerably more complex than the alternatives and the problem of droplet detection is relatively simple if compared to other computer vision tasks such as traffic image segmentation in which a wide variety of subjects (in terms of geometry, color, scale, etc.) can be found. Moreover, in table \ref{table:globular_best_models} the first two MultiResUnet models have a low number of epochs, especially considering that the patience is of 20 epochs when applying the early stopping criteria. Then, a higher patience could improve those results but this is not clear since the third best model does have higher number of epochs and performs similarly. Furthermore, the better performance of U-Net over DeconvNet is to be expected, since the U-Net incorporates skip layers while DeconvNet is a vanilla FCN. Also, notice that the standard deviation is always one order of magnitude below the average, which means the individual results do not differ significantly. Hence, the models are robust since they perform similarly across different sets of validation data.
+The low performance of the MultiResUnet can be explained by the fact that it is more complex than the alternatives, and the problem of droplet detection is relatively simple if compared with other tasks such as traffic image segmentation in which a wide variety of subjects can be found (in terms of geometry, color, scale, etc.). Specifically, the improvements over the U-Net are not too present in the considered datasets, that is, there is no considerable variation in scale between images. Moreover, in table \ref{table:globular_best_models} the first two MultiResUnet models have a low number of epochs, specially considering that the patience is of 20 epochs. Then, a higher patience could improve those results but this is not clear since the third best model does have a higher number of epochs and performs similarly. Furthermore, the better performance of U-Net over DeconvNet is to be expected as the U-Net incorporates skip layers while DeconvNet is a regular FCN. Lastly, the standard deviations are one order of magnitude below the average, which implies the individual results do not differ significantly. Hence, the models are robust since they perform similarly across different sets of validation data.
 
 \input{Tables/best_models_table}
 
 \section{Training}
 
-After the grid search, the best models are selected based on the average validation loss and then these models are saved to make predictions. In figures \ref{fig:globular_loss_curve} and \ref{fig:spray_loss_curve} the learning curves for the globular and spray models are shown respectively. These graphs show that the training is indeed successful, steadily reaching a low loss value both in training and validation. The gap between the two is to be expected and the fact that the two curves show similar behavior as opposed to having the validation go up while training loss goes down suggests that there is no significant overfitting in neither of both cases.
+After grid search, the best models are selected based on the average validation loss and then these models are saved to make predictions. In figures \ref{fig:globular_loss_curve} and \ref{fig:spray_loss_curve} the learning curves for the globular and spray models are shown respectively. These graphs show that the training is indeed successful, steadily reaching a low loss value both in training and validation. The gap between the two is to be expected and the fact that the two curves show similar behavior as opposed to having the validation go up while training loss goes down suggests that there is no significant overfitting in neither of both cases.
 
 Additionally, validation loss is monitored through the training process so that only parameters in which that metric improves are saved. Then, the best model is saved rather than the model at the end of training. In practical terms, since the early stopping has a patience of 20, when the training is done, the last model saved is 20 epochs prior to the last one which corresponds to the model with the smallest validation loss in the whole curve as seen in the dashed vertical lines in figures \ref{fig:globular_loss_curve} and \ref{fig:spray_loss_curve}.
 
@@ -34,29 +34,12 @@ Additionally, validation loss is monitored through the training process so that 
 
 \section{Testing}
 
-The best models obtained via grid search are trained and then used to make predictions over all of the image data, that is new masks are generated by the model. The globular model reaches a test loss of $0.02$ and in spray the test loss is of $0.01$. These results are low compared to those obtained in the training phase which can be explained by a couple of factors as follows.
+The best models obtained via grid search are trained and then used to make predictions over all of the image data, that is new masks are generated by the model. Notice that since the test data is not labeled, it is not possible to measure the error metric. Nonetheless, it is expected that the test set should perform just as well or even better for a couple of reasons explained as follows
 
-First, when training, dropout is applied to prevent overfitting but, when testing, dropout is not necessary since the network has already been trained and the weights are fixed. Therefore, the network is more powerful when testing which can yield lower loss values in comparison. Second, a lower test loss can be explained by the fact that the training examples where chosen to have a high variance in them so the network can learn the more complex patterns which can appear in the process. Finally, the training examples were augmented, hence the examples that were already diverse in geometry, get more complex by dropping pixels, adding elastic transformations and noise.
-Then, the testing set has a majority of examples that are rather simple compared to training examples which consequently reduces the loss value. 
-\begin{figure}
-  \begin{subfigure}[b]{0.5\textwidth}
-    \input{Images/Results/globular_test_loss/globular_test_loss.pgf}
-    \caption{Globular}
-    \label{fig:globular_test_loss}
-  \end{subfigure}
-\hfill
-  \begin{subfigure}[b]{0.5\textwidth}
-    \input{Images/Results/spray_test_loss/spray_test_loss.pgf}
-    \caption{Spray}
-    \label{fig:spray_test_loss}
-  \end{subfigure}
-  \caption[Log histogram of the test loss obtained for every example]{Log histogram of the test loss obtained for every test example.}
-  \label{fig:test_loss_hist}
-\end{figure}
+First, when training, dropout is applied to prevent overfitting but, when testing, dropout is not necessary since the network has already been trained and the weights are fixed. Therefore, the network is more powerful when testing which can yield better results in comparison. Second, the training examples where chosen to have a high variance in them so the network can learn the more complex patterns which can appear in the process. Furthermore, training examples were augmented, hence the examples that were already diverse in geometry, get more complex by dropping pixels, adding elastic transformations and noise.
+Then, the testing set has a majority of examples that are rather simple compared to training examples which consequently enhances performance. 
 
-In figures \ref{fig:globular_test_loss} and \ref{fig:spray_test_loss} a histogram of the obtained loss for every example in the test set is shown for each transfer mode. As stated before, an overwhelming majority of examples have a small loss value and a small amount are on the higher end in both cases. A different pattern appears in globular and spray although the loss values remains small in all of the spectrum.
-
-Examples of input and mask are sampled from some of the bins in each histogram, shown in figures \ref{fig:globular_loss_samples} and \ref{fig:spray_loss_samples}. In the globular case, most of the images are similar to figure \ref{fig:globular_loss_samples_a} reaching a low loss value and having a noticeably accurate segmentation. In the other examples in which the loss is higher, the network does not output a segmentation mapping and predicts zero for most of the pixels. This is because of the nature of the process of globular transfer, since all of those frames occur when a droplet has been released and submerged in the welding pool, and a new droplet is being formed. At this point when the droplet is just beginning to form, the network does not recognize a droplet in the frame, which can be useful since the droplet detachment frequency can be inferred from this behavior.
+Examples of input and segmentation map are chosen to discuss some special cases, shown in figures \ref{fig:globular_loss_samples} and \ref{fig:spray_loss_samples}. In the globular case, most of the images are similar to figure \ref{fig:globular_loss_samples_a} having a noticeably accurate segmentation (at least qualitatively). In the other examples, the network does not output a segmentation mapping and predicts zero for most of the pixels. This is because of the nature of the process of globular transfer, since all of those frames occur when a droplet has been released and submerged in the welding pool, and a new droplet is being formed. At this point when the droplet is just beginning to form, the network does not recognize a droplet in the frame, which can be useful since the droplet detachment frequency can be inferred from this behavior.
 
 \begin{figure}
   \begin{subfigure}[b]{0.45\textwidth}
@@ -76,14 +59,14 @@ Examples of input and mask are sampled from some of the bins in each histogram, 
   \end{subfigure}
 \hfill
   \begin{subfigure}[b]{0.45\textwidth}
-    \import{Images/Results/globular_test_loss/4/}{globular_test_loss_10.pgf}
+    \import{Images/Results/globular_test_loss/4/}{globular_test_loss_5.pgf}
     \caption{}
   \end{subfigure}
-  \caption[Image samples for globular transfer mode based on test loss]{Image samples for globular transfer mode based on test loss.}
+  \caption[Prediction samples for globular transfer mode]{Prediction samples for globular transfer mode.}
   \label{fig:globular_loss_samples}
 \end{figure}
 
-On the other hand, figure \ref{fig:spray_loss_samples} shows that most of the loss values in spray transfer are low even on the higher end of the histogram. Nevertheless, figure \ref{fig:spray_loss_samples_d} is from the worse performing examples and clearly the mapping is not accurate, this may be because the geometry is significantly different from the other examples, making it harder to predict. The fact that most of the examples in spray transfer have a similar loss while in globular transfer there is a wider gap happens due to the fact that the droplet's process in spray transfer is not separated by frames, that is, in most frames there are multiple droplets in the image, so the process of formation, detachment and landing of the droplet into the welding pool cannot be separated in a frame by frame basis, so spray transfer frames look more alike.
+ On the other hand, spray examples are mostly accurate, although separate droplets can be segmented together if they are too close. Figure \ref{fig:spray_loss_samples_d} is from the worse performing examples and clearly the mapping is not accurate, this may occur because the geometry is significantly different from the other examples, making it harder to predict. The fact that most of the examples in spray transfer have a similar performance while in globular transfer there are several examples with no segmentation happens due to the fact that the droplet's process in spray transfer is not separated by frames, that is, in most frames there are multiple droplets in the image, so the process of formation, detachment and landing of the droplet into the welding pool cannot be separated in a frame by frame basis, so spray transfer frames look more alike.
 
 \begin{figure}
   \begin{subfigure}[b]{0.45\textwidth}
@@ -106,11 +89,11 @@ On the other hand, figure \ref{fig:spray_loss_samples} shows that most of the lo
     \caption{}
     \label{fig:spray_loss_samples_d}
   \end{subfigure}
-  \caption[Image samples for spray transfer mode based on test loss]{Image samples for spray transfer mode based on test loss.}
+  \caption[Prediction samples for spray transfer mode]{Prediction samples for spray transfer mode.}
   \label{fig:spray_loss_samples}
 \end{figure}
 
-The previous results are to show some of the outliers with bad results. However, the majority of segmentation mappings are accurate both qualitatively since they look like they separate the droplet and quantitatively since the loss is small. In figures \ref{fig:glob_pred_samples} and \ref{fig:spray_pred_samples} some randomly sampled predictions are shown.
+The previous results are to show some of the outliers with bad or unexpected results. However, the majority of segmentation mappings are accurate. In figures \ref{fig:glob_pred_samples} and \ref{fig:spray_pred_samples} some randomly sampled predictions are shown.
 
 \begin{figure}
 \centering
@@ -158,8 +141,7 @@ The previous results are to show some of the outliers with bad results. However,
 
 Moreover, an important aspect of this work is that the labels were manually generated, so the results are subject to a human bias, specifically the selection of the boundary of the droplet because at a pixel level there is not an exact distinction between droplet and background and a gradient is seen between the brighter pixels of the droplet and the darker pixels of the background.
 
-Hence, to make more evident where the network decides to make  the droplet-background division which is influenced by the labeling, figures \ref{fig:boundary_globular} and \ref{fig:boundary_spray} show the pixel values of a single horizontal strip, specifically the one that goes through the centroid of the droplet segmentation. There, one can see that there is a transition between droplet and background, and vertical lines show where the model cuts and makes the segmentation. The figures show that in the image there there is a steep transition between background and droplet, and the segmentation cuts around the middle of that transition.
-
+Hence, to make more evident where the network decides to make  the droplet-background division which is influenced by the labeling, figures \ref{fig:boundary_globular} and \ref{fig:boundary_spray} show the pixel values of a single horizontal strip, specifically the one that goes through the centroid of the droplet segmentation. There, one can see that there is a transition between droplet and background, and vertical lines show where the model cuts and makes the segmentation. The figures show that in the image there there is a steep transition between background and droplet, and the segmentation cuts around the middle of that transition. This results are also useful to assess the models' performance quantitatively since it is not possible to compute the loss function.
 
 \begin{figure}
     \centering
@@ -178,10 +160,11 @@ Hence, to make more evident where the network decides to make  the droplet-backg
 \clearpage
 
 \section{Post processing}
-In this section the results after generating the segmentation maps are shown. These results consist in geometric and physical properties of the processes that help to understand them better. In Appendix \ref{appendix_b1} there is a summary of the techniques used to obtain properties from the segmentation maps and general signal processing.
+In this section the results after generating the segmentation maps are shown. These results consist in geometric and physical properties of the processes that help to understand them better. In Appendix \ref{appendix_postproc} there is a summary of the techniques used to obtain properties from the segmentation maps and signal processing in general.
+
 \subsection{Centroids, velocity and acceleration}
 
-The centroids of each frame are obtained using \texttt{opencv} which can identify contours in the segmented images and then compute the moments of each contour. In images \ref{fig:globular_centroids} and \ref{fig:spray_centroids} some of the examples are shown. The results show that the centroids are accurately found in the segmentation maps and correspond to those in the original image. Moreover, it is possible to detect multiple contours within an image, so frames with more than one droplet have a separate centroid for each droplet.
+The centroids of each frame are obtained using \texttt{opencv} which can identify contours in the segmented images and then compute the moments of each contour (see Appendix \ref{appendix_b1}). In images \ref{fig:globular_centroids} and \ref{fig:spray_centroids} some of the examples are shown. The results show that the centroids are accurately found in the segmentation maps and correspond to those in the original image. Moreover, it is possible to detect multiple contours within an image, so frames with more than one droplet have a separate centroid for each droplet.
 
 In globular transfer, the growth process usually has only one droplet and when the droplet detaches, more droplets appear in the frame. This can be due to the main droplet splitting into two or more, or the network identifying the tip of the wire as another droplet or some portion of the weld pool which is too bright. The tip of the wire being identified as a droplet occurs because the melting of the wire is a continuous process, so when the droplet detaches, another droplet begins to form. Nevertheless, most of the time the initial state of the growth process does not have any segmented droplets, as shown in figure \ref{fig:globular_centroids_3}.
 
@@ -189,17 +172,18 @@ On the other hand, spray transfer has a faster growth and detachment of droplets
 
 \begin{figure}
 \centering
-  \begin{subfigure}[b]{0.45\textwidth}
+  \begin{subfigure}[b]{.95\textwidth}
     \import{Images/Results/centroid_samples/}{globular_0.pgf}
     \caption{}
 
   \end{subfigure}
-\hfill
-  \begin{subfigure}[b]{0.45\textwidth}
+\vfill
+  \begin{subfigure}[b]{.95\textwidth}
     \import{Images/Results/centroid_samples/}{globular_790.pgf}
     \caption{}
   \end{subfigure}
-  \begin{subfigure}[b]{0.45\textwidth}
+  \vfill
+ \begin{subfigure}[b]{.95\textwidth}
     \import{Images/Results/centroid_samples/}{globular_2360.pgf}
     \caption{}
     \label{fig:globular_centroids_3}
@@ -210,17 +194,18 @@ On the other hand, spray transfer has a faster growth and detachment of droplets
 
 \begin{figure}
 \centering
-  \begin{subfigure}[b]{0.45\textwidth}
+  \begin{subfigure}[b]{.95\textwidth}
     \import{Images/Results/centroid_samples/}{spray_0.pgf}
     \caption{}
 
   \end{subfigure}
-\hfill
-  \begin{subfigure}[b]{0.45\textwidth}
+\vfill
+  \begin{subfigure}[b]{.95\textwidth}
     \import{Images/Results/centroid_samples/}{spray_42.pgf}
     \caption{}
   \end{subfigure}
-  \begin{subfigure}[b]{0.45\textwidth}
+  \vfill
+ \begin{subfigure}[b]{.95\textwidth}
     \import{Images/Results/centroid_samples/}{spray_656.pgf}
     \caption{}
   \end{subfigure}
@@ -228,102 +213,183 @@ On the other hand, spray transfer has a faster growth and detachment of droplets
     \label{fig:spray_centroids}
 \end{figure}
 
-Furthermore, given the $x$ and $y$ coordinates at each point in time, it is possible to compute velocity and acceleration with the use of numerical differentiation (see Appendix \ref{sec:physical}). Specifically, free flight centroid data is used to compute velocity and acceleration, that is the periods of time in which the droplet is detached from the wire and has not yet reached the weld pool. Calculations are not made throughout the whole video since the focus should be in each single droplet, as opposed to the stream of droplets which would cause discontinuities in velocity or area, obfuscating the analysis.
 
-The identification of the droplet in the frame is a problem that has to be addressed since multiple centroids can appear in one image. In order to track a specific droplet through time, a continuity criterion is used. An initial droplet is selected, then at each time the next centroids are compared to the current centroid and the one with the minimum euclidean distance is chosen since it is expected that a droplet can only move within its vicinity from frame to frame.
+Furthermore, given the $x$ and $y$ coordinates at each point in time, it is possible to compute velocity and acceleration. Specifically, free flight centroid data is used to compute velocity and acceleration, that is the periods of time in which the droplet is detached from the wire and has not yet reached the weld pool. Calculations are not made throughout the whole video since the focus should be in each single droplet, as opposed to the stream of droplets which would cause discontinuities in velocity or area, obfuscating the analysis. Since position measurements can be noisy, $x$ and $y$ positions are interpolated using a polynomial. A cubic function is used for globular and a quadratic for spray. The difference in functions is because in spray, free flight trajectory consists in around 5-10 frames which is quite low. Then, velocity and acceleration can be obtained analytically by differentiating the position function in each coordinate.
 
-The trajectory, velocity and acceleration of different free flight droplet motion can be seen in figure \ref{fig:vel}. Also, statistical features for velocity and acceleration are shown in tables \ref{tab:vel} through \ref{tab:acc_n}. Notice that the signs of velocity and acceleration are because of the origin of coordinates which is on the top left of the graphs shown in figure \ref{fig:vel}. Displacement in $y$ is more or less fixed since the droplet will always land at about the same height while $x$ displacement ranges from $1\:mm$ up to $4\;mm$. Lower $x$ displacement is also seen in the velocity having a larger $y$ component, hence landing faster as seen in figure \ref{fig:vel}. Moreover, velocity is around $30\;cm/s$ having relatively small variations while acceleration has a much higher deviation both in magnitude as well as direction. This is because many forces contribute to the motion of the droplet, namely the gravitational force, Lorentz forces produced by the electromagnetic phenomena, forces produced by the shielding gas plasma and surface tension forces.
+The identification of the droplet in the frame is a problem that has to be addressed since multiple centroids can appear in one image. In order to track a specific droplet through time, a continuity criterion is used. An initial droplet is selected. Then, at each frame the next centroids are compared to the current centroid and the one with the minimum euclidean distance is chosen since it is expected that a droplet can only move within its vicinity from frame to frame.
 
-In comparison, in the work of \textit{Weglowski} \cite{vel}, accelerations of around $130 \;m/s^2$ are obtained, similar to those shown here, although consistently smaller. The velocity is quite different, ranging from $50\;m/s$ to $90\;m/s$ for varying current intensities. The results are highly dependent on the experimental setup, so differences are to be expected. On the other hand, in the work of \textit{Ray} \cite{Ray} the values for acceleration are notably smaller, between $20\;m/s^2$ and $90\;m/s^2$.
-
-Although these computations should be accurate based on the segmentation accuracy and subsequent centroid position, it is worth noting that higher resolution in space (more pixels) would get better results because usually the centroid displacements are around 1 pixel so many displacements that would yield different velocities are cast into the same velocity. The same happens with acceleration. This phenomenon can be seen in the graphs of figure \ref{fig:vel} where the trajectory less smooth. On the other hand, higher resolution in time (sampling frequency) would allow to analyze shorter period motion, specifically spray transfer, which given the sampling frequency, the data points during free flight are scarce, which is the reason spray transfer mode is left out in this part of the analysis
 \begin{figure}
 \centering
-  \begin{subfigure}[b]{\textwidth}
-    \import{Images/Results/kinematic/}{vel_acc_34-72.pgf}
+  \begin{subfigure}[b]{.8\textwidth}
+    \import{Images/Results/kinematic/}{globular_trajectory_34-72.pgf}
   \end{subfigure}
 \vfill
-  \begin{subfigure}[b]{\textwidth}
-    \import{Images/Results/kinematic/}{vel_acc_289-342.pgf}
+  \begin{subfigure}[b]{.8\textwidth}
+    \import{Images/Results/kinematic/}{globular_trajectory_289-342.pgf}
   \end{subfigure}
-\caption[Trajectory, velocity and acceleration of a free flight globular droplet for multiple time windows]{Trajectory (dashed blue line), velocity (black arrows) and acceleration (red arrows) of a free flight globular droplet for multiple time windows.} 
-\label{fig:vel}
+\caption[Trajectory, velocity and acceleration of a free flight globular droplet for multiple time windows]{Trajectory, velocity (black arrows) and acceleration (red arrows) of a free flight globular droplet for multiple time windows. Trajectory is interpolated using a third degree polynomial in the $x$ and $y$ coordinates.} 
+\label{fig:vel_glob}
 \end{figure}
 
 \begin{figure}
 \centering
     \ContinuedFloat
     \captionsetup{list=off,format=cont}
-  \begin{subfigure}[b]{\textwidth}
-    \import{Images/Results/kinematic/}{vel_acc_1439-1502.pgf}
+  \begin{subfigure}[b]{.8\textwidth}
+    \import{Images/Results/kinematic/}{globular_trajectory_1439-1502.pgf}
   \end{subfigure}
 \vfill
-  \begin{subfigure}[b]{\textwidth}
-    \import{Images/Results/kinematic/}{vel_acc_2279-2341.pgf}
+  \begin{subfigure}[b]{.8\textwidth}
+    \import{Images/Results/kinematic/}{globular_trajectory_2279-2341.pgf}
   \end{subfigure}
-\caption{Trajectory (dashed blue line), velocity (black arrows) and acceleration (red arrows) of a free flight globular droplet for multiple time windows.} 
+\caption{Trajectory, velocity and acceleration of a free flight globular droplet for multiple time windows.} 
 \end{figure}
 
+\begin{figure}
+\centering
+  \begin{subfigure}[b]{.8\textwidth}
+    \import{Images/Results/kinematic/}{spray_trajectory_6-15.pgf}
+  \end{subfigure}
+\vfill
+  \begin{subfigure}[b]{.8\textwidth}
+    \import{Images/Results/kinematic/}{spray_trajectory_26-32.pgf}
+  \end{subfigure}
+\caption[Trajectory, velocity and acceleration of a free flight spray droplet for multiple time windows]{Trajectory, velocity (black arrows) and acceleration (red arrows) of a free flight spray droplet for multiple time windows. Trajectory is interpolated using a second degree polynomial in the $x$ and $y$ coordinates.} 
+\label{fig:vel_spray}
+\end{figure}
 
+\begin{figure}
+\centering
+    \ContinuedFloat
+    \captionsetup{list=off,format=cont}
+  \begin{subfigure}[b]{.8\textwidth}
+    \import{Images/Results/kinematic/}{spray_trajectory_49-56.pgf}
+  \end{subfigure}
+\vfill
+  \begin{subfigure}[b]{.8\textwidth}
+    \import{Images/Results/kinematic/}{spray_trajectory_59-67.pgf}
+  \end{subfigure}
+\caption{Trajectory, velocity and acceleration of a free flight spray droplet for multiple time windows.} 
+\end{figure}
 
 \begin{table}
 \centering
-\caption{Statistical features of velocity in each component for multiple free flight time windows.}
-\label{tab:vel}
-\begin{tabular}{c|cccccc}
-\multirow{2}{*}{Frames} & \multicolumn{2}{l}{\begin{tabular}[c]{@{}l@{}}Min\\ $[cm/s]$\end{tabular}} & \multicolumn{2}{l}{\begin{tabular}[c]{@{}l@{}}Max\\ $[cm/s]$\end{tabular}} & \multicolumn{2}{l}{\begin{tabular}[c]{@{}l@{}}Mean $\pm$ Std. dev.\\ $[cm/s]$\end{tabular}} \\
+\caption[Globular statistical features of velocity in each component for multiple free flight time windows]{Globular statistical features of velocity in each component for multiple free flight time windows.}
+\label{tab:vel_glob}
+\begin{tabular}{|c|cccccc|}
+\hline
+\multirow{2}{*}{Frames} & \multicolumn{2}{c}{\begin{tabular}[c]{@{}c@{}}Min\\ $[cm/s]$\end{tabular}} & \multicolumn{2}{c}{\begin{tabular}[c]{@{}c@{}}Max\\ $[cm/s]$\end{tabular}} & \multicolumn{2}{c|}{\begin{tabular}[c]{@{}c@{}}Mean $\pm$ Std. dev.\\ $[cm/s]$\end{tabular}} \\
  & $v_x$ & $v_y$ & $v_x$ & $v_y$ & $v_x$ & $v_y$ \\ \hline
-$34-72$ & $-37.8$ & $8.2$ & $-10.9$ & $35.1$ & $-22.3\pm 7.1$ & $23.7\pm 7.1$ \\
-$289-342$ & $-29.9$ & $5.5$ & $-17.3$ & $35.6$ & $-23.1\pm 2.6$ & $21.2\pm 8.2$ \\
-$1429-1502$ & $-20.2$ & $6.9$ & $8.8$ & $47.4$ & $-7.9\pm 5.8$ & $25.3\pm 8.5$ \\
-$2279-2341$ & $-24.8$ & $12.2$ & $-3.9$ & $45.9$ & $-13.8\pm 5.7$ & $31.4\pm 8.6$
+$34-72$ & $-34.0$ & $13.8$ & $-19.1$ & $31.5$ & $-23.2\pm 3.9$ & $23.6\pm 5.1$ \\
+$289-342$ & $-25.7$ & $6.1$ & $-21.0$ & $32.3$ & $-23.2\pm 1.3$ & $21.1\pm 7.6$ \\
+$1429-1502$ & $-11.2$ & $14.6$ & $-7.4$ & $37.7$ & $-8.5\pm 1.0$ & $25.6\pm 6.7$ \\
+$2279-2341$ & $-17.4$ & $16.3$ & $-12.3$ & $43.9$ & $-14.0\pm 1.5$ & $30.9\pm 7.9$ \\ \hline
 \end{tabular}
 \end{table}
 
-
 \begin{table}
 \centering
-\caption{Statistical features of the norm of the velocity for multiple free flight time windows.}
-\label{tab:vel_n}
-\begin{tabular}{c|ccc}
-\multicolumn{1}{l|}{\multirow{2}{*}{Frames}} & \multicolumn{3}{c}{$|\vec{v}|$} \\ \cline{2-4} 
-\multicolumn{1}{l|}{} & \multicolumn{1}{l}{\begin{tabular}[c]{@{}l@{}}Min\\ $[cm/s]$\end{tabular}} & \multicolumn{1}{l}{\begin{tabular}[c]{@{}l@{}}Max\\ $[cm/s]$\end{tabular}} & \multicolumn{1}{l}{\begin{tabular}[c]{@{}l@{}}Mean $\pm$ Std. dev.\\ $[cm/s]$\end{tabular}} \\ \hline
-$34-72$ & $19.1$ & $48.6$ & $33.2\pm 7.1$ \\
-$289-342$ & $21.6$ & $44.7$ & $31.8\pm 6.2$ \\
-$1429-1502$ & $9.8$ & $49.0$ & $27.3\pm 8.6$ \\
-$2279-2341$ & $17.5$ & $51.4$ & $34.8\pm 8.0$
+\caption[Globular statistical features of the norm of the velocity for multiple free flight time windows]{Globular statistical features of the norm of the velocity for multiple free flight time windows.}
+\label{tab:vel_norm_glob}
+\begin{tabular}{|c|ccc|}
+\hline
+\multicolumn{1}{|c|}{\multirow{2}{*}{Frames}} & \multicolumn{3}{c|}{$||\vec{v}||$} \\ \cline{2-4} 
+\multicolumn{1}{|c|}{} & \multicolumn{1}{c}{\begin{tabular}[c]{@{}c@{}}Min\\ $[cm/s]$\end{tabular}} & \multicolumn{1}{c}{\begin{tabular}[c]{@{}c@{}}Max\\ $[cm/s]$\end{tabular}} & \multicolumn{1}{c|}{\begin{tabular}[c]{@{}c@{}}Mean $\pm$ Std. dev.\\ $[cm/s]$\end{tabular}} \\ \hline
+$34-72$ & $28.3$ & $46.4$ & $33.4\pm 5.2$ \\
+$289-342$ & $21.8$ & $41.3$ & $31.7\pm 5.9$ \\
+$1429-1502$ & $17.8$ & $39.4$ & $27.1\pm 6.4$ \\
+$2279-2341$ & $13.2$ & $18.3$ & $14.6\pm 1.4$ \\ \hline
 \end{tabular}
 \end{table}
 
-
 \begin{table}
 \centering
-\caption{Statistical features of acceleration in each component for multiple free flight time windows.}
-\label{tab:acc}
-\begin{tabular}{c|cccccc}
-\multirow{2}{*}{Frames} & \multicolumn{2}{l}{\begin{tabular}[c]{@{}l@{}}Min\\ $[m/s]$\end{tabular}} & \multicolumn{2}{l}{\begin{tabular}[c]{@{}l@{}}Max\\ $[m/s]$\end{tabular}} & \multicolumn{2}{l}{\begin{tabular}[c]{@{}l@{}}Mean $\pm$ Std. dev.\\ $[m/s]$\end{tabular}} \\
+\caption[Globular statistical features of acceleration in each component for multiple free flight time windows]{Globular statistical features of acceleration for each component for multiple free flight time windows.}
+\label{tab:acc_glob}
+\begin{tabular}{|c|cccccc|}
+\hline
+\multirow{2}{*}{Frames} & \multicolumn{2}{c}{\begin{tabular}[c]{@{}c@{}}Min\\ $[m/s^2]$\end{tabular}} & \multicolumn{2}{c}{\begin{tabular}[c]{@{}c@{}}Max\\ $[m/s^2]$\end{tabular}} & \multicolumn{2}{c|}{\begin{tabular}[c]{@{}c@{}}Mean $\pm$ Std. dev.\\ $[m/s^2]$\end{tabular}} \\
  & $a_x$ & $a_y$ & $a_x$ & $a_y$ & $a_x$ & $a_y$ \\ \hline
-$34-72$ & $-314.9$ & $-236.3$ & $314.64$ & $245.5$ & $-3.8\pm 132.2$ & $7.1\pm 115.0$ \\
-$289-342$ & $-129.7$ & $-100.9$ & $93.8$ & $160.1$ & $-2.4\pm 52.3$ & $12.3\pm 60.9$ \\
-$1429-1502$ & $-410.2$ & $-302.1$ & $214.2$ & $351.8$ & $-9.7\pm 123.1$ & $18.2\pm 127.0$ \\
-$2279-2341$ & $-258.8$ & $-211.8$ & $253.4$ & $262.8$ & $-11.2\pm 109.3$ & $-0.5\pm 102.6$
+$34-72$ & $-42.8$ & $9.5$ & $32.8$ & $19.2$ & $-4.9\pm 22.07$ & $14.3\pm 2.8$ \\
+$289-342$ & $-3.3$ & $8.5$ & $-2.1$ & $21.6$ & $-2.7\pm 0.3$ & $15.0\pm 3.7$ \\
+$1429-1502$ & $-6.7$ & $9.5$ & $5.7$ & $12.9$ & $-0.4\pm 3.6$ & $11.2\pm 0.9$ \\
+$2279-2341$ & $-10.1$ & $11.6$ & $10.1$ & $15.2$ & $~0\pm 5.9$ & $13.4\pm 1.0$ \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}
+\centering
+\caption[Globular statistical features of the norm of the acceleration for multiple free flight time windows]{Globular statistical features of the norm of the acceleration for multiple free flight time windows.}
+\label{tab:acc_norm_glob}
+\begin{tabular}{|c|ccc|}
+\hline
+\multicolumn{1}{|c|}{\multirow{2}{*}{Frames}} & \multicolumn{3}{c|}{$||\vec{a}||$} \\ \cline{2-4} 
+\multicolumn{1}{|c|}{} & \multicolumn{1}{c}{\begin{tabular}[c]{@{}c@{}}Min\\ $[m/s^2]$\end{tabular}} & \multicolumn{1}{c}{\begin{tabular}[c]{@{}c@{}}Max\\ $[m/s^2]$\end{tabular}} & \multicolumn{1}{c|}{\begin{tabular}[c]{@{}c@{}}Mean $\pm$ Std. dev.\\ $[m/s^2]$\end{tabular}} \\ \hline
+$34-72$ & $14.8$ & $43.8$ & $25.6\pm 8.4$ \\
+$289-342$ & $9.2$ & $21.7$ & $15.3\pm 3.6$ \\
+$1429-1502$ & $10.6$ & $14.5$ & $11.7\pm 1.1$ \\
+$2279-2341$ & $13.2$ & $18.3$ & $14.6\pm 1.4$ \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}
+\centering
+\caption[Spray statistical features of velocity in each component for multiple free flight time windows]{Spray statistical features of velocity in each component for multiple free flight time windows.}
+\label{tab:vel_spray}
+\begin{tabular}{|c|cccccc|}
+\hline
+\multirow{2}{*}{Frames} &
+  \multicolumn{2}{c}{\begin{tabular}[c]{@{}c@{}}Min\\ $[cm/s]$\end{tabular}} &
+  \multicolumn{2}{c}{\begin{tabular}[c]{@{}c@{}}Max\\ $[cm/s]$\end{tabular}} &
+  \multicolumn{2}{c|}{\begin{tabular}[c]{@{}c@{}}Mean $\pm$ Std. dev.\\ $[cm/s]$\end{tabular}} \\
+        & $v_x$   & $v_y$   & $v_x$   & $v_y$   & $v_x$          & $v_y$          \\ \hline
+$6-15$  & $-20.8$ & $73.8$  & $-18.6$ & $81.5$  & $-19.7\pm 0.6$ & $77.6\pm 2.2$  \\
+$26-32$ & $-23.7$ & $94.0$  & $-22.4$ & $100.2$ & $-23.1\pm 0.3$ & $97.1\pm 1.7$  \\
+$49-56$ & $2.2$   & $102.3$ & $9.51$  & $111.5$ & $5.8\pm 2.1$   & $106.9\pm 2.6$ \\
+$59-67$ & $-11.3$ & $123.5$ & $-5.3$  & $128.4$ & $-8.3\pm 1.7$  & $126.0\pm 1.4$ \\ \hline
 \end{tabular}
 \end{table}
 
 
 \begin{table}
 \centering
-\caption{Statistical features of the norm of the acceleration for multiple free flight time windows.}
-\label{tab:acc_n}
-\begin{tabular}{c|ccc}
-\multicolumn{1}{l|}{\multirow{2}{*}{Frames}} & \multicolumn{3}{c}{$|\vec{a}|$} \\ \cline{2-4} 
-\multicolumn{1}{l|}{} & \multicolumn{1}{l}{\begin{tabular}[c]{@{}l@{}}Min\\ $[m/s]$\end{tabular}} & \multicolumn{1}{l}{\begin{tabular}[c]{@{}l@{}}Max\\ $[m/s]$\end{tabular}} & \multicolumn{1}{l}{\begin{tabular}[c]{@{}l@{}}Mean $\pm$ Std. dev.\\ $[m/s]$\end{tabular}} \\ \hline
-$34-72$ & $17.9$ & $328.7$ & $155.4\pm 85.4$ \\
-$289-342$ & $11.8$ & $191.1$ & $71.7\pm 38.2$ \\
-$1429-1502$ & $19.7$ & $497.1$ & $152.6\pm 91.8$ \\
-$2279-2341$ & $29.9$ & $313.6$ & $136.2\pm 63.7$
+\caption[Spray statistical features of the norm of the velocity for multiple free flight time windows]{Spray statistical features of the norm of the velocity for multiple free flight time windows.}
+\label{tab:vel_norm_spray}
+\begin{tabular}{|c|ccc|}
+\hline
+\multirow{2}{*}{Frames} & \multicolumn{3}{c|}{$||\vec{v}||$} \\ \cline{2-4} 
+ &
+  \begin{tabular}[c]{@{}c@{}}Min\\ $[cm/s]$\end{tabular} &
+  \begin{tabular}[c]{@{}c@{}}Max\\ $[cm/s]$\end{tabular} &
+  \begin{tabular}[c]{@{}c@{}}Mean $\pm$ Std. dev.\\ $[cm/s]$\end{tabular} \\ \hline
+$6-15$                  & $76.7$  & $83.6$  & $80.1\pm 2.0$  \\
+$26-32$                 & $97.0$  & $102.6$ & $99.8\pm 1.6$  \\
+$49-56$                 & $102.4$ & $111.9$ & $107.1\pm 2.7$ \\
+$59-67$                 & $124.1$ & $128.5$ & $126.3\pm 1.2$ \\ \hline
 \end{tabular}
 \end{table}
+
+\begin{table}
+\centering
+\caption[Spray features of acceleration for multiple free flight time windows]{Spray features of acceleration for multiple free flight time windows (acceleration is constant since trajectory is assumed to be a second degree polynomial).}
+\label{tab:acc_spray}
+\begin{tabular}{|c|ccc|}
+\hline
+Frames  & $a_x$   & $a_y$   & $||\vec{a}||$ \\ \hline
+$6-15$  & $8.3$   & $29.0$  & $30.2$        \\
+$26-32$ & $-7.9$  & $-36.7$ & $37.6$        \\
+$49-56$ & $-36.4$ & $-45.8$ & $58.5$        \\
+$59-67$ & $-25.9$ & $-20.8$ & $33.2$        \\ \hline
+\end{tabular}
+\end{table}
+
+The trajectory, velocity and acceleration of different free flight droplet motion can be seen in figures \ref{fig:vel_glob} and \ref{fig:vel_spray} for globular and spray respectively. Also, statistical features for velocity and acceleration are shown in tables \ref{tab:vel_glob} through \ref{tab:acc_spray}. Notice that the axes correspond to the $x$ and $y$ position of the centroid in the image converted to distance and the origin is on the top left. 
+
+Displacement in $y$ is more or less fixed since the droplet will always land at about the same height while $x$ displacement ranges from $1\:mm$ up to $4\;mm$ in globular and less than $1\;mm$ in spray. A smaller $x$ displacement is also seen in the velocity having a larger $y$ component, hence landing faster as seen in spray trajectories (fig. \ref{fig:vel_spray}). Furthermore, velocity is around $30\;cm/s$ in globular while spray is much more, reaching around $100\;cm/s$. Also, acceleration is around $15\;m/s^2$ for globular and $40\:m/s^2$ in spray. As expected, spray transfer tends to be faster than globular since cycles are much shorter. It is worth noting that the spray acceleration does have a less intuitive pattern pointing upwards in general which may be due to the small sample of the trajectory points because interpolating values and then differentiating can induce more error.
+
+In comparison, in the work of \textit{Weglowski} \cite{vel}, accelerations between $90-140 \;m/s^2$ are obtained for varying experimental setups. Moreover, in the work of\textit{Hu} \cite{vel2} acceleration ranges within $20-50\;m/s^2$. Similar values are found in \textit{Ray} \cite{Ray}. Acceleration values found here are within the order of magnitude of previous work, specially when compared to \textit{Hu} and \textit{Ray} \cite{vel2,Ray}. Differences may be due to different experimental setups, but also because of the inherent error when interpolating and differentiating twice for acceleration. In the case of velocity, ranges of $50-100\;cm/s$ and $20-50\;cm/s$ are found \cite{vel,vel2} which mostly coincide with those calculated in this work.
+
+Although these computations should be accurate based on the segmentation accuracy and subsequent centroid position, it is worth noting that higher resolution in time (sampling frequency) would get better results because centroid displacements can be too fast and rough trajectories are seen, this phenomenon can be observed in the graphs of figures \ref{fig:vel_glob} and specially \ref{fig:vel_spray} in which the scarcity of data points for trajectory is evident.
 
 \subsection{Area and detachment rate}
 
@@ -331,7 +397,7 @@ The contours found in each image can also be used to compute the area of a dropl
 
 The globular case shows a pattern where there is a growing phase in which only one droplet is detected (black dots), then the area drops suddenly and the number of droplets detected is more than one (red crosses). Later, the network detects no droplets in the frame for a brief time (blue dots) and then the cycle is repeated.
 
-Since the value of the area is an indicator of when the droplet detaches from the wire, it is useful to detect when this is happening. This is done by smoothing the signal using a \textit{hanning} window and convolving it with the original signal which effectively works as a weighted average. Notice that since the area can have multiple values for a given frame, the sum of these values is used instead. In this way, the smoothed signal is easier to process simply by finding its peaks, which is carried out using \texttt{scipy}'s \texttt{find\_peaks} function which allows to set a variety of parameters such as height, prominence and width of peaks\footnote{Notice that \texttt{scipy} finds maximum peaks and in this case the opposite is needed, so in practice the negative value of the signal is used.}. As seen in figure \ref{fig:globular_areas}, the smoothed curve's (green curve) minimum peaks (vertical dashed lines) coincide with the detachment of droplets accurately. In this way it is possible to count the number of droplets over time as well as the point in time when that occurs. Specifically, the number of globular droplet detachments observed is 25 while the detected is 24.
+Since the value of the area is an indicator of when the droplet detaches from the wire, it would be useful to detect when this is happening. This is done by smoothing the signal using a \textit{hanning} window and convolving it with the original signal which effectively works as a weighted average. Notice that since the area can have multiple values for a given frame, the sum of these values is used instead. In this way, the smoothed signal is easier to process simply by finding its peaks, which is carried out using \texttt{scipy}'s \texttt{find\_peaks} function which allows to set a variety of parameters such as height, prominence and width of peaks\footnote{Notice that \texttt{scipy} finds maximum peaks and in this case the opposite is needed, so in practice the negative value of the signal is used.}. As seen in figure \ref{fig:globular_areas}, the smoothed curve's (green curve) minimum peaks (vertical dashed lines) coincide with the detachment of droplets accurately. In this way it is possible to count the number of droplets over time as well as the point in time when that occurs. Specifically, the number of globular droplet detachments observed is 25 while the detected is 24.
 
 \begin{figure}
   \begin{subfigure}[b]{\textwidth}
@@ -350,9 +416,10 @@ Since the value of the area is an indicator of when the droplet detaches from th
 
 The droplet detachment is found accurately across almost all of the globular video, detecting only one detachment fewer than the original if one counts by eye the number of droplets detached from the original video. Nonetheless, due to the method used for finding peaks, this means that the detachment was not found because the area did not diminish significantly (hence, no peak was found). This part of the signal is shown in figure \ref{fig:no_detachment} in which it can be seen that it breaks the pattern because there is no portion with no droplets present (blue dots) and multiple droplets are detected instead.
 
-This behavior is due to a shortcoming of the neural network. In some occasions the weld pool is too bright, this can happen simply because of the movement of material in the weld pool or because the droplet, when is reaching the weld pool, is reflected by it and therefore the image effectively shows two droplets. Examples of this are depicted in figure \ref{fig:reflection}. These examples are found throughout the whole video, but only in the time window shown in figure \ref{fig:no_detachment} they affect the results. Although this could be solved with a more robust deep learning architecture, it is probably more effective to have more labeled images of those specific cases, i.e. droplet reflection and overall brightness of the weld pool.
+This behavior occurs due to a shortcoming of the neural network. In some occasions the weld pool is too bright, this can happen simply because of the movement of material in the weld pool or because the droplet, when it is reaching the weld pool, is reflected by it and therefore the image effectively shows two droplets. Examples of this are depicted in figure \ref{fig:reflection}. These examples are found throughout the whole video, but only in the time window shown in figure \ref{fig:no_detachment} they affect the results. Although this could be solved with a more robust deep learning architecture, it is probably more effective to have more labeled images of those specific cases, i.e. droplet reflection and overall brightness of the weld pool.
 
  \begin{figure}
+ \centering
     \import{Images/Results/areas/}{globular_area_9.pgf}
     \caption[Globular area curve where no detachment is found]{Globular area curve where no detachment is found.}
     \label{fig:no_detachment}
@@ -376,7 +443,7 @@ This behavior is due to a shortcoming of the neural network. In some occasions t
  
  Additionally, some occurrences of single droplet detection can be seen, notably when the area is higher. This occurs when the forming droplet accumulates more material and therefore takes longer to detach, which allows for the current flying droplet (smaller area) to submerge in the weld pool before the new droplet releases from the wire.
 
-Although the graphs are different in spray and globular, the same approach can be used to detect spray droplet detachment\footnote{Parameters must be tweaked accordingly, e.g., a much smaller hanning window is needed.}, that is finding peaks in the area. The difference in the spray case is that the indicator is always the largest droplet, so the maximum area value is taken (as opposed to the sum in globular) and then the peaks are found in the same fashion as in globular. The number of detachments found is of 673 while the actual detachments are 676. Furthermore, the shortcomings of the segmentation maps are still present as in globular but to a lesser extent, specially droplet reflection since the droplets are smaller.
+Although the graphs are different in spray and globular, the same approach can be used to detect spray droplet detachment\footnote{Parameters must be tweaked accordingly, e.g. a much smaller hanning window is needed.}, that is finding peaks in the area. The difference in the spray case is that the indicator is always the largest droplet, so the maximum area value is taken (as opposed to the sum in globular) and then the peaks are found in the same fashion as in globular. The number of detachments found is of 673 while the actual detachments are 676. Furthermore, the shortcomings of the segmentation maps are still present as in globular but to a lesser extent, specially droplet reflection is not a big problem since the droplets are smaller.
 
 Also, it is worth mentioning that although the method of finding peaks is similar, in the globular case the prominence is found in the minima while in spray are the maximum values. Therefore, the time of the detachment is delayed in globular transfer but not in spray, in which the time of detachment obtained should match the actual detachment. Nonetheless, this does not affect the number of detachments overall nor the time spacing between them.
 
@@ -384,26 +451,26 @@ Finally, a summary of the detachment data is shown in table \ref{tab:detachment}
 
 \begin{table}
 \centering
-\caption{Statistical data of the detachment process.}
+\caption[Statistical features of droplet detachment]{Statistical features of droplet detachment.}
 \label{tab:detachment}
-\begin{tabular}{ccclll}
-\cline{2-5}
-\multicolumn{1}{c|}{} & \multicolumn{4}{c|}{Time between droplet detachment $[ms]$} & \multicolumn{1}{c}{} \\ \hline
-\multicolumn{1}{|c|}{\begin{tabular}[c]{@{}c@{}}Transfer\\ mode\end{tabular}} & \multicolumn{1}{c|}{Min} & \multicolumn{1}{c|}{Max} & \multicolumn{1}{c|}{Mean} & \multicolumn{1}{c|}{\begin{tabular}[c]{@{}c@{}}Std.\\ dev.\end{tabular}} & \multicolumn{1}{c|}{\begin{tabular}[c]{@{}c@{}}Detachment\\ area $[mm^2]$\end{tabular}} \\ \hline
-\multicolumn{1}{|c|}{Globular} & \multicolumn{1}{c|}{$51.32$} & \multicolumn{1}{c|}{$239.61$} & \multicolumn{1}{c|}{$131.72$} & \multicolumn{1}{c|}{$47.14$} & \multicolumn{1}{c|}{$[10-15]$} \\
-\multicolumn{1}{|c|}{Spray} & \multicolumn{1}{c|}{$1.00$} & \multicolumn{1}{c|}{$8.65$} & \multicolumn{1}{c|}{$3.31$} & \multicolumn{1}{c|}{$1.12$} & \multicolumn{1}{c|}{$[2-4]$} \\ \hline
-\multicolumn{1}{l}{} & \multicolumn{1}{l}{} & \multicolumn{1}{l}{} &  &  &  \\ \cline{1-3}
-\multicolumn{1}{|c|}{\begin{tabular}[c]{@{}c@{}}Transfer\\ mode\end{tabular}} & \multicolumn{1}{c|}{\begin{tabular}[c]{@{}c@{}}Total predicted\\ detachments\end{tabular}} & \multicolumn{1}{c|}{\begin{tabular}[c]{@{}c@{}}Total\\ detachments\end{tabular}} &  &  &  \\ \cline{1-3}
-\multicolumn{1}{|c|}{Globular} & \multicolumn{1}{c|}{24} & \multicolumn{1}{c|}{25} &  &  &  \\
-\multicolumn{1}{|c|}{Spray} & \multicolumn{1}{c|}{673} & \multicolumn{1}{c|}{676} &  &  &  \\ \cline{1-3}
+\begin{tabular}{ccccc}
+\hline
+\multicolumn{1}{|c|}{\multirow{2}{*}{\begin{tabular}[c]{@{}c@{}}Transfer\\ mode\end{tabular}}} & \multicolumn{3}{c}{Time between droplet detachments $[ms]$} & \multicolumn{1}{c|}{\multirow{2}{*}{\begin{tabular}[c]{@{}c@{}}Detachment\\ area $[mm^2]$\end{tabular}}} \\
+\multicolumn{1}{|c|}{} & Min & Max & Mean $\pm$ Std. dev. & \multicolumn{1}{c|}{} \\ \hline
+\multicolumn{1}{|c|}{Globular} & $51.3$ & $239.6$ & $131.7\pm 47.1$ & \multicolumn{1}{c|}{$[10-15]$} \\
+\multicolumn{1}{|c|}{Spray} & $1.0$ & $8.6$ & $3.3\pm 1.1$ & \multicolumn{1}{c|}{$[2-4]$} \\ \hline
+ &  &  &  &  \\ \cline{1-4}
+\multicolumn{1}{|c|}{\begin{tabular}[c]{@{}c@{}}Transfer\\ mode\end{tabular}} & \begin{tabular}[c]{@{}c@{}}Total\\ predicted\\ detachments\end{tabular} & \begin{tabular}[c]{@{}c@{}}Total\\ detachments\end{tabular} & \multicolumn{1}{c|}{\begin{tabular}[c]{@{}c@{}}Predicted\\ detachment\\ frequency $[Hz]$\end{tabular}} &  \\ \cline{1-4}
+\multicolumn{1}{|c|}{Globular} & $24$ & $25$ & \multicolumn{1}{c|}{$7.2$} &  \\
+\multicolumn{1}{|c|}{Spray} & $673$ & $676$ & \multicolumn{1}{c|}{$301.9$} &  \\ \cline{1-4}
 \end{tabular}
 \end{table}
 
 \section{Surface tension}
 
-Rayleigh's formula \cite{rayleigh} is used to calculate the surface tension (see Appendix \ref{sec:physical}, eq. \eqref{eq:rayleigh}). Approximations of density, volume and oscillation period are used. Density is obtained from literature and a value of $6500\;kg\cdot m^{-3}$ is used \cite{surface_tension}, volume is calculated by fitting an ellipse to the segmentation using \texttt{opencv} and assuming the 3D droplet is a prolate ellipsoid, that is it has symmetry along its minor axis, so formula \eqref{eq:vol} can be applied. Additionally, the volume during free flight should remain constant since it is a liquid droplet and no mass is added or removed. However, because the volume is calculated from the area, it will have inherent variations since the area is not constant, so the mean of the volume is taken to calculate the surface tension. Furthermore, the oscillation period can be obtained from Fourier analysis. 
+Rayleigh's formula \cite{rayleigh} is used to calculate the surface tension (see Appendix \ref{sec:physical}, eq. \eqref{eq:rayleigh}). Approximations of density, volume and oscillation period are used. Density is obtained from literature and a value of $6500\;kg\cdot m^{-3}$ is used \cite{surface_tension}, volume is calculated by fitting an ellipse to the segmentation using \texttt{opencv} and assuming the 3D droplet is an ellipsoid with axial symmetry along its minor axis, so formula \eqref{eq:vol} can be applied. Additionally, the volume during free flight should remain constant since it is a liquid droplet and no mass is added or removed. However, because the volume is calculated from the area, it will have inherent variations since the area is not constant, so the mean of the volume is taken to calculate the surface tension. Furthermore, the oscillation period can be obtained from Fourier analysis. 
 
-In figure \ref{fig:fft} the perimeter signal as well as Fourier spectrum is shown for different free flight time windows. From the graphs, the main frequencies are between $50-100\;Hz$ which indicates that those frequencies are indeed the ones associated to the main oscillation in the perimeter plot since the scale of the grid is $0.003\;s$ (i.e. $333\;Hz$) which is around the same order of magnitude. Hence, it is unlikely that the frequency of interest is higher than the sampling theorem would allow and aliasing is not a concern. Thus, these frequencies can be converted to a period by taking the inverse and then used to compute the surface tension.
+In figure \ref{fig:fft} the perimeter signal as well as Fourier spectrum is shown for different free flight time windows. From the graphs, the main frequencies are between $50-230\;Hz$ which indicates that those frequencies are indeed the ones associated to the main oscillation in the perimeter plot since the scale of the grid is $0.003\;s$ (i.e. $333\;Hz$) which is around the same order of magnitude. Hence, it is unlikely that the frequency of interest is higher than the sampling theorem would allow and aliasing is not a concern. Thus, these frequencies can be converted to a period by taking the inverse and then used to compute the surface tension.
 
 \begin{figure}
 \centering
@@ -412,7 +479,7 @@ In figure \ref{fig:fft} the perimeter signal as well as Fourier spectrum is show
   \end{subfigure}
 \vfill
   \begin{subfigure}[b]{\textwidth}
-    \import{Images/Results/fourier/}{globular_fft_1439-1502.pgf}
+    \import{Images/Results/fourier/}{globular_fft_289-342.pgf}
   \end{subfigure}
 \caption[Perimeter signal and corresponding Fourier spectrum for different free flight time windows]{Perimeter signal and corresponding Fourier spectrum for different free flight time windows.} 
 \label{fig:fft}
@@ -423,31 +490,49 @@ In figure \ref{fig:fft} the perimeter signal as well as Fourier spectrum is show
     \ContinuedFloat
     \captionsetup{list=off,format=cont}
   \begin{subfigure}[b]{\textwidth}
-    \import{Images/Results/fourier/}{globular_fft_2279-2341.pgf}
+    \import{Images/Results/fourier/}{globular_fft_1439-1502.pgf}
   \end{subfigure}
 \vfill
   \begin{subfigure}[b]{\textwidth}
-    \import{Images/Results/fourier/}{globular_fft_4197-4253.pgf}
+    \import{Images/Results/fourier/}{globular_fft_4553-4577.pgf}
   \end{subfigure}
 \caption[Perimeter signal and corresponding Fourier spectrum for different free flight time windows]{Perimeter signal and corresponding Fourier spectrum for different free flight time windows.}
 \end{figure}
 
-Table \ref{tab:sigma} shows the calculated surface tension for different time windows, including those in figure \ref{fig:fft}. If we compare to other literature results, the values are rather high, ranging from\footnote{Although the whole video has more instances of droplet detachment those shown here, all lie within the same range.} $1\;Nm^{-1}$ up to $4.4\;Nm^{-1}$ while in the work of \textit{Subramanian} \cite{surface_tension} values between $0.9$ and $1.8$ are found. Moreover, in \textit{Ray} \cite{Ray} values range between $1.25\;Nm^{-1}$ and $3.2\;Nm^{-1}$ which are closer to those shown here. Nonetheless, the specific values depend on the experimental setup, that is gas composition, wire material, current, among others. Another consideration to have is that the droplet size in this work is larger than other works based on volume calculations. For example, in \textit{Ray}, the maximum volume considered is of $13\;mm^3$ while in this case volumes up to around $40\;mm^3$ are obtained. Despite the fact that the volume is an approximation, it does seem reasonable if we compare the sizes of droplets in figures \ref{fig:snakes} and \ref{fig:glob_samples} since in the latter case, the droplet is several times larger than the wire. Also, the values get as low as $0.83\;Nm^{-1}$ which is lower than in \textit{Subramanian}, so here the values have a higher variance in general. This is because the globular process in the analyzed video is erratic, and the droplet release and landing can occur in a variety of ways. 
+The estimation of volume is corrected since approximating the droplet as an axisymmetrical ellipsoid may not always be accurate. This can be done comparing the volume deposition rate which can be obtained knowing the wire's diameter as well as the wire feed speed. Then, the total volume for a given time window can be compared by summing the calculated volume for each droplet. Since calculating volume from wire feed speed and wire diameter should be accurate, the discrepancy in volume is corrected in the volume calculation from the ellipsoid simply by the difference in factor (ratio) from both values. Table \ref{tab:volume} shows the expected volume over a time window,the predicted volume when approximating and the final corrected value. Notice that spray transfer is not corrected since the approximated value is close to the expected. It makes sense that spray has a better approximation because by simple inspection it can be seen that spray droplets tend to be more circular-like or ellipse-like, hence the assumption is less extreme, as opposed to globular transfer in which droplets may differ from an ellipsoid considerably, which is reflected in the calculated volume being notably higher than the expected.
 
-An important remark is that these results only apply for globular transfer. This is because the fast pace of the droplets in spray transfer do not allow to have enough data points during free flight motion. The number of points that can be gathered are between $5-10$ consecutive frames, so the Fourier analysis becomes unfeasible and is not possible to accurately estimate the oscillation period. Nevertheless, volume is calculated, and results are similar to those in \textit{Subramanian} \cite{surface_tension} of around $1\;mm^3$ for free flight droplets. Notice that the significantly smaller volume does not necessarily mean less surface tension, since the period should also be much smaller and surface tension is inversely proportional to the square of the period.
+\begin{table}
+\centering
+\caption[Volume correction data]{Volume correction data. Total volume for a given time window is calculated using wire feed speed and wire diameter data. Then, this is compared with the volume estimation using an axisymmetrical ellipsoid. This volume is then corrected by the error factor between the expected (wire feed speed) and estimated (ellipsoid) volume. Corrected volume is not the same as the expected due to decimal approximation. Also, correction is not used in spray transfer since volume estimation is already close to the expected value.}
+\label{tab:volume}
+\begin{tabular}{ccccc}
+\hline
+\multicolumn{1}{|c|}{\begin{tabular}[c]{@{}c@{}}Transfer\\ mode\end{tabular}} & \begin{tabular}[c]{@{}c@{}}Time\\ window $[s]$\end{tabular} & \begin{tabular}[c]{@{}c@{}}Wire feed\\ speed $[mm/s]$\end{tabular} & \begin{tabular}[c]{@{}c@{}}Wire\\ diameter $[mm]$\end{tabular} & \multicolumn{1}{c|}{\begin{tabular}[c]{@{}c@{}}Volume detachment\\ rate $[mm^3/s]$\end{tabular}} \\ \hline
+\multicolumn{1}{|c|}{Globular} & $1.589$ & $73.3$ & $1.143$ & \multicolumn{1}{c|}{$75.2$} \\
+\multicolumn{1}{|c|}{Spray} & $0.113$ & $166.6$ & $1.143$ & \multicolumn{1}{c|}{$171.0$} \\ \hline
+ &  &  &  &  \\ \hline
+\multicolumn{1}{|c|}{\begin{tabular}[c]{@{}c@{}}Transfer\\ mode\end{tabular}} & \begin{tabular}[c]{@{}c@{}}Total\\ volume $[mm^3]$\end{tabular} & \begin{tabular}[c]{@{}c@{}}Total estimated\\ volume $[mm^3]$\end{tabular} & \begin{tabular}[c]{@{}c@{}}Total corrected\\ volume $[mm^3]$\end{tabular} & \multicolumn{1}{c|}{\begin{tabular}[c]{@{}c@{}}Average droplet\\ volume $[mm^3]$\end{tabular}} \\ \hline
+\multicolumn{1}{|c|}{Globular} & $119.6$ & $186.25$ & $118.46$ & \multicolumn{1}{c|}{$10.43$} \\
+\multicolumn{1}{|c|}{Spray} & $20.8$ & $19.0$ & $-$ & \multicolumn{1}{c|}{$0.56$} \\ \hline
+\end{tabular}
+\end{table}
+
+
+Table \ref{tab:sigma} shows the calculated surface tension for different time windows, including those in figure \ref{fig:fft}. If we compare to other literature results, the values are within the order of magnitude, ranging from\footnote{Although the whole video has more instances of droplet detachment those shown here, all lie within the same range.} $0.8\;Nm^{-1}$ up to $3.3\;Nm^{-1}$ while in the work of \textit{Subramanian} \cite{surface_tension} values between $0.9$ and $1.8$ are found. Moreover, in \textit{Ray} \cite{Ray} values range between $1.25\;Nm^{-1}$ and $3.2\;Nm^{-1}$ which are closer to those shown here. Nonetheless, the specific values depend on the experimental setup, that is gas composition, wire material, current, among others. Also, values get as low as $0.88\;Nm^{-1}$ which is lower than in \textit{Subramanian}, so here the values have a higher variance in general. This is because the globular process in the analyzed video is erratic, and the droplet release and landing can occur in a variety of ways. 
+
+An important remark is that these results only apply for globular transfer. This is because the fast pace of the droplets in spray transfer do not allow to have enough data points during free flight motion. The number of points that can be gathered are between $5-10$ consecutive frames, so the Fourier analysis becomes unfeasible and it is not possible to reliably estimate the oscillation period.
 
 
 \begin{table}
 \centering
-\caption{Volume and surface tension calculated values for multiple time windows.}
+\caption[Volume and surface tension calculated values for multiple time windows]{Volume and surface tension calculated values for multiple time windows.}
 \label{tab:sigma}
-\begin{tabular}{|c|c|c|c|c|c|c|}
+\begin{tabular}{|c|cc|c|c|cc|}
 \cline{1-3} \cline{5-7}
-Frames & \begin{tabular}[c]{@{}c@{}}Volume\\ $[mm^3]$\end{tabular} & \begin{tabular}[c]{@{}c@{}}Surface tension\\ $[Nm^{-1}]$\end{tabular} &  & Frames & \begin{tabular}[c]{@{}c@{}}Volume\\ $[mm^3]$\end{tabular} & \begin{tabular}[c]{@{}c@{}}Surface tension\\ $[Nm^{-1}]$\end{tabular} \\ \cline{1-3} \cline{5-7} 
-$34-72$ & $29.09\pm 2.27$ & $1.38\pm 0.11$ &  & $4761-4853$ & $11.00\pm 1.41$ & $4.39\pm 0.56$ \\
-$1439-1502$ & $28.24\pm 3.23$ & $1.67\pm 0.19$ &  & $4983-5031$ & $8.86\pm 1.16$ & $2.35\pm  0.31$ \\
-$2279-2341$ & $25.22\pm 1.76$ & $0.81\pm 0.05$ &  & $5732-5816$ & $23.81\pm 2.10$ & $2.09\pm 0.18$ \\
-$4196-4253$ & $11.28\pm 2.10$ & $3.83\pm 0.71$ &  & $6589-6653$ & $23.04\pm 1.28$ & $1.50\pm 0.08$ \\
-$4553-4577$ & $19.90\pm 5.82$ & $1.77\pm 0.52$ &  & $7754-7817$ & $27.60\pm 1.48$ & $1.91\pm 0.10$ \\ \cline{1-3} \cline{5-7} 
+Frames & \begin{tabular}[c]{@{}c@{}}Volume\\ $[mm^3]$\end{tabular} & \begin{tabular}[c]{@{}c@{}}Surface\\ tension $[Nm^{-1}]$\end{tabular} &  & Frames & \begin{tabular}[c]{@{}c@{}}Volume\\ $[mm^3]$\end{tabular} & \begin{tabular}[c]{@{}c@{}}Surface\\ tension $[Nm^{-1}]$\end{tabular} \\ \cline{1-3} \cline{5-7} 
+$34-72$ & $18.5\pm 1.5$ & $0.88\pm 0.007$ &  & $4761-4853$ & $6.9\pm 0.8$ & $2.79\pm 0.35$ \\
+$289-342$ & $7.6\pm 0.7$ & $3.02\pm 0.31$ &  & $4983-5031$ & $5.6\pm 0.7$ & $1.51\pm 0.19$ \\
+$1439-1502$ & $17.9\pm 2.0$ & $1.24\pm 0.14$ &  & $5732-5816$ & $15.1\pm 1.3$ & $1.33\pm 0.11$ \\
+$4553-4577$ & $12.6\pm 3.7$ & $1.51\pm 0.44$ &  & $6111-6146$ & $14.8\pm 1.9$ & $3.34\pm 0.43$ \\ \cline{1-3} \cline{5-7} 
 \end{tabular}
 \end{table}
